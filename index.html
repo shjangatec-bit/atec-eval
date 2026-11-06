@@ -1,0 +1,1412 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>에이텍컴퓨터 역량평가</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard-dynamic-subset.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#f4f6fa;--card:#fff;--ink:#1b2333;--ink2:#4a5468;--muted:#8a93a6;--line:#e3e7ef;
+  --pri:#1f5fd6;--pri-d:#174bb0;--pri-l:#eaf1ff;
+  --green:#14894f;--green-l:#e6f6ed;--amber:#b86e00;--amber-l:#fff4e0;--red:#c62f2f;--red-l:#fdecec;--gray-l:#eef0f4;
+  --r:10px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Pretendard',-apple-system,BlinkMacSystemFont,'Malgun Gothic','맑은 고딕',system-ui,sans-serif;font-size:16px;line-height:1.5}
+button,input,select{font:inherit;color:inherit}
+a{color:var(--pri)}
+.hidden{display:none!important}
+/* 버튼 */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:#fff;padding:7px 14px;border-radius:8px;cursor:pointer;font-weight:500;white-space:nowrap}
+.btn:hover{border-color:#c5cddc;background:#f8fafd}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.pri{background:var(--pri);border-color:var(--pri);color:#fff}
+.btn.pri:hover{background:var(--pri-d)}
+.btn.danger{color:var(--red);border-color:#f0c6c6}
+.btn.sm{padding:4px 10px;font-size:15px}
+.btn.ghost{border-color:transparent;background:transparent}
+/* 로그인 */
+.login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+.login-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:36px 32px;width:100%;max-width:380px;box-shadow:0 8px 30px rgba(20,40,90,.06)}
+.brand{font-weight:700;color:var(--pri);letter-spacing:.08em;font-size:15px}
+.login-card h1{margin:6px 0 4px;font-size:26px}
+.login-card .sub{margin:0 0 22px;color:var(--ink2)}
+.field{display:block;margin-bottom:12px}
+.field span{display:block;font-size:14px;color:var(--ink2);margin-bottom:4px;font-weight:500}
+.field input,.field select,.inp{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 11px;background:#fff}
+.field input:focus,.inp:focus,select:focus{outline:2px solid var(--pri-l);border-color:var(--pri)}
+.login-card .btn.pri{width:100%;padding:10px}
+.hint{color:var(--muted);font-size:14px;margin:14px 0 0}
+.err{color:var(--red);font-size:15px;min-height:18px;margin:4px 0 8px}
+.demo-box{margin-top:18px;padding:12px;border:1px dashed #c9d6f2;border-radius:8px;background:#f7faff;font-size:14px;color:var(--ink2)}
+.demo-box select{margin-top:6px}
+/* 상단 */
+.top{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+.top-in{max-width:1240px;margin:0 auto;padding:0 16px;display:flex;align-items:center;gap:18px;height:56px}
+.top .logo{font-weight:700;white-space:nowrap}
+.top .logo b{color:var(--pri)}
+.tabs{display:flex;gap:2px;overflow-x:auto;flex:1;scrollbar-width:none}
+.tab{border:0;background:none;padding:8px 12px;border-radius:8px;cursor:pointer;color:var(--ink2);white-space:nowrap;font-weight:500}
+.tab:hover{background:var(--gray-l)}
+.tab.on{background:var(--pri-l);color:var(--pri)}
+.who{display:flex;align-items:center;gap:6px;white-space:nowrap;font-size:15px;color:var(--ink2)}
+.banner{background:var(--amber-l);color:var(--amber);text-align:center;padding:7px 16px;font-size:15px;font-weight:500}
+.banner.demo{background:#eef4ff;color:var(--pri)}
+main{max-width:1240px;margin:0 auto;padding:22px 16px 120px}
+main.wide{max-width:1600px}
+.top-in.wide{max-width:1600px}
+/* 관리자 표: 줄바꿈 허용 + 마지막 열 고정 */
+.tbl-fit td.wrap{white-space:normal;line-height:1.35}
+.tbl-fit td.wrap small{display:block;color:var(--muted);font-size:13px}
+.tbl-fit td select{width:100%;min-width:0;max-width:none}
+.tbl-fit .c-form{width:22%}.tbl-fit .c-ev{width:13%}
+.tbl-fit th:last-child,.tbl-fit td:last-child{position:sticky;right:0;background:#fff;box-shadow:-6px 0 8px -6px rgba(20,40,90,.15)}
+.tbl-fit th:last-child{background:#f8f9fc}
+.tbl-fit tr.dirty td:last-child{background:#fffbea}
+.tbl-fit tr.off td:last-child{background:#fbfbfc}
+.tbl-fit .hist{flex-wrap:nowrap;gap:4px}
+.tbl-fit .hg{gap:2px}
+h2{font-size:22px;margin:0 0 4px}
+.desc{color:var(--ink2);margin:0 0 18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:16px}
+.card h3{margin:0 0 12px;font-size:17px}
+/* 요약 숫자 */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.kpi .l{font-size:14px;color:var(--ink2)}
+.kpi .v{font-size:26px;font-weight:700;margin-top:2px}
+.kpi .v small{font-size:15px;color:var(--muted);font-weight:500}
+.bar{height:6px;background:var(--gray-l);border-radius:4px;margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--pri)}
+/* 표 */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:#fff}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle;white-space:nowrap}
+th{background:#f8f9fc;color:var(--ink2);font-weight:500;font-size:14px;position:sticky;top:0}
+tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#fafbfe}
+td.num,th.num{text-align:right}
+td.c,th.c{text-align:center}
+tr.off td{color:var(--muted);background:#fbfbfc}
+tr.dirty td{background:#fffbea}
+td select,td input.inp{padding:5px 7px;border:1px solid var(--line);border-radius:6px;background:#fff;max-width:220px}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:14px;font-weight:500}
+.b-gray{background:var(--gray-l);color:var(--ink2)}
+.b-gray2{background:#f3f4f7;color:var(--muted)}
+.b-amber{background:var(--amber-l);color:var(--amber)}
+.b-green{background:var(--green-l);color:var(--green)}
+.b-blue{background:var(--pri-l);color:var(--pri)}
+.final{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid #cfe0ff;border-radius:var(--r);padding:14px 16px;margin-top:10px}
+.final .t{flex:1;min-width:200px;color:var(--ink2);font-size:15px}
+.b-red{background:var(--red-l);color:var(--red)}
+.b-muted{background:transparent;color:var(--muted);padding-left:0}
+.hist{display:inline-flex;gap:6px;flex-wrap:wrap}
+.hg{display:inline-flex;align-items:center;gap:3px;font-size:14px;color:var(--ink2)}
+.hg b{display:inline-block;min-width:20px;text-align:center;padding:1px 5px;border-radius:5px;font-size:14px}
+.g-S{background:#efe7ff;color:#6a3fc9}.g-A{background:var(--green-l);color:var(--green)}.g-B{background:var(--gray-l);color:var(--ink2)}.g-C{background:var(--amber-l);color:var(--amber)}.g-D{background:var(--red-l);color:var(--red)}.g-none{background:transparent;color:#b8bfcc}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.toolbar .inp,.toolbar select{width:auto;min-width:150px;border:1px solid var(--line);border-radius:8px;padding:7px 10px;background:#fff}
+.toolbar .sp{flex:1}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+/* 내 평가 목록 */
+.list{display:grid;gap:10px}
+.trow{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.trow .nm{font-weight:700;font-size:17px;min-width:76px}
+.trow .meta{color:var(--ink2);font-size:15px;flex:1;min-width:0}
+.trow .meta div{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trow .st{min-width:84px;text-align:center}
+.trow .sc{min-width:92px;text-align:right;font-size:15px;color:var(--ink2)}
+.trow .sc b{font-size:19px;color:var(--ink)}
+.trow .sc small{color:var(--muted)}
+.p1{font-size:14px;color:var(--ink2);background:#f1f4f9;border-radius:6px;padding:2px 8px;white-space:nowrap}
+.p1 b{color:var(--ink)}
+.sec-h .btn{margin-left:auto}
+.sec-h{display:flex;align-items:baseline;gap:10px;margin:22px 0 10px}
+.sec-h h3{margin:0;font-size:18px}
+.sec-h span{color:var(--ink2);font-size:15px}
+/* 평가 입력 */
+.ev-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ev-info{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px 18px;font-size:15px}
+.ev-info .l{color:var(--muted);font-size:14px}
+.ev-info .v{font-weight:500}
+.note{padding:10px 14px;border-radius:8px;font-size:15px;margin-bottom:14px}
+.note.info{background:var(--pri-l);color:#1d4ba8}
+.note.ok{background:var(--green-l);color:var(--green)}
+.note.warn{background:var(--amber-l);color:var(--amber)}
+.grp-h{font-size:16px;font-weight:700;color:var(--pri);margin:22px 0 10px;display:flex;align-items:center;gap:8px}
+.grp-h::after{content:"";flex:1;height:1px;background:var(--line)}
+.item{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin-bottom:10px}
+.item.done{border-color:#cfe0ff}
+.item-h{display:flex;align-items:center;gap:10px}
+.item-h .no{width:24px;height:24px;border-radius:50%;background:var(--gray-l);display:inline-flex;align-items:center;justify-content:center;font-size:14px;color:var(--ink2);flex:none}
+.item.done .no{background:var(--pri);color:#fff}
+.item-h b{font-size:17px;flex:1}
+.item-h .cur{font-size:21px;font-weight:700;color:var(--pri);min-width:48px;text-align:right}
+.item-h .cur small{font-size:14px;color:var(--muted);font-weight:400}
+.ind{margin:8px 0 12px 34px;padding:0;list-style:none;color:var(--ink2);font-size:15px}
+.ind li{position:relative;padding-left:12px;margin-bottom:2px}
+.ind li::before{content:"";position:absolute;left:0;top:9px;width:4px;height:4px;border-radius:50%;background:#aab3c5}
+.scale{display:grid;grid-template-columns:repeat(11,1fr);gap:4px;margin-left:34px}
+.scale button{border:1px solid var(--line);background:#fff;border-radius:6px;padding:7px 0;cursor:pointer;font-weight:500;font-size:15px}
+.scale button:hover:not(:disabled):not(.on){border-color:var(--pri);color:var(--pri)}
+.scale button.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.scale button:disabled{cursor:default}
+.scale button:disabled:not(.on){opacity:.5}
+.scale-lg{display:flex;justify-content:space-between;margin:4px 0 0 34px;font-size:13px;color:var(--muted)}
+.guide{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:12px 16px;margin-bottom:14px;font-size:15px}
+.guide summary{cursor:pointer;font-weight:700;color:var(--pri)}
+.guide table{margin-top:8px;font-size:15px}
+.guide td{white-space:normal;padding:6px 10px}
+.guide td:first-child{font-weight:700;white-space:nowrap;width:110px}
+.footbar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);z-index:30;box-shadow:0 -4px 16px rgba(20,40,90,.05)}
+.footbar-in{max-width:1240px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px}
+.footbar .sum{flex:1;font-size:15px;color:var(--ink2)}
+.footbar .sum b{font-size:19px;color:var(--ink)}
+.automsg{display:block;font-size:13px;color:var(--muted);margin-top:2px}
+.tgt{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:4px;font-size:15px;color:var(--ink2)}
+.tgt b{color:var(--ink)}
+.tgt .d{font-weight:700;padding:1px 8px;border-radius:6px;font-size:14px}
+.tgt .d.ok{background:var(--green-l);color:var(--green)}.tgt .d.hi{background:var(--amber-l);color:var(--amber)}.tgt .d.lo{background:#eef3ff;color:var(--pri)}
+.gauge{position:relative;width:180px;height:8px;background:var(--gray-l);border-radius:4px;flex:none}
+.gauge i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:var(--pri)}
+.gauge em{position:absolute;top:-4px;width:2px;height:16px;background:var(--ink);border-radius:1px}
+.sec-tgt{font-size:15px;color:var(--ink2)}
+.totop{position:fixed;right:20px;bottom:24px;z-index:40;width:48px;height:48px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--pri);font-size:22px;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(20,40,90,.16);opacity:0;pointer-events:none;transform:translateY(8px);transition:opacity .2s,transform .2s}
+.totop.show{opacity:1;pointer-events:auto;transform:none}
+.totop:hover{background:var(--pri);color:#fff;border-color:var(--pri)}
+.autonext{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--ink2);cursor:pointer;white-space:nowrap}
+.autonext input{width:16px;height:16px}
+.item.next{box-shadow:0 0 0 2px var(--pri-l)}
+.automsg.err{color:var(--red)}
+.automsg.ok{color:var(--green)}
+/* 모달 */
+.mask{position:fixed;inset:0;background:rgba(15,25,45,.42);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+.modal{background:#fff;border-radius:12px;width:100%;max-width:460px;max-height:90vh;overflow:auto;padding:22px}
+.modal.wide{max-width:760px}
+.modal h3{margin:0 0 10px;font-size:19px}
+.modal p{margin:0 0 14px;color:var(--ink2);white-space:pre-line}
+.modal .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none}
+.tst{background:#1b2333;color:#fff;padding:10px 16px;border-radius:8px;font-size:15px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.tst.err{background:var(--red)}
+.loading{padding:60px;text-align:center;color:var(--muted)}
+.chk{display:flex;align-items:center;gap:8px;margin:6px 0}
+.upl-sum{margin:12px 0;font-size:15px}
+.upl-sum li{margin:2px 0}
+.warn-list{max-height:180px;overflow:auto;background:var(--amber-l);color:#7a4a00;border-radius:8px;padding:10px 14px 10px 28px;font-size:14px;margin:8px 0}
+.switch{display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+.switch input{width:18px;height:18px}
+.form-items{margin:4px 0 4px;background:#fafbfd}
+.form-items td{white-space:normal;vertical-align:top}
+@media (max-width:720px){
+  .top-in{flex-wrap:wrap;height:auto;padding:10px 16px;gap:8px}
+  .tabs{order:3;flex-basis:100%}
+  .who .nmtxt{display:none}
+  .trow{flex-wrap:wrap;gap:8px}
+  .trow .meta{flex-basis:100%;order:3}
+  .trow .st{min-width:0;margin-left:auto}
+  .trow .sc{min-width:0}
+  .scale{grid-template-columns:repeat(6,1fr);margin-left:0}
+  .scale-lg,.ind{margin-left:0}
+  .grid2{grid-template-columns:1fr}
+  .footbar-in{flex-wrap:wrap;gap:8px;padding:10px 16px}
+  .footbar .sum{flex-basis:100%}
+  .gauge{width:110px}
+  .tgt .gauge,.tgt .tn{display:none}
+  .footbar .sum{font-size:14px}
+  .autonext{flex-basis:100%;font-size:13px}
+  .totop{right:14px;width:44px;height:44px}
+  .footbar .btn{flex:1}
+  main{padding-bottom:170px}
+}
+</style>
+</head>
+<body>
+<div id="app"><div class="loading">불러오는 중…</div></div>
+<div id="modal"></div>
+<div id="toast"></div>
+<button id="toTop" class="totop" type="button" title="맨 위로" aria-label="맨 위로">↑</button>
+<script>
+/* =============================================================
+   설정: Supabase 프로젝트 정보를 넣으면 실제 운영 모드로 동작합니다.
+   (비워두면 데모 모드 — 저장 내용은 새로고침하면 사라집니다)
+   Supabase > Project Settings > API 에서 확인
+   ============================================================= */
+const CONFIG = {
+  SUPABASE_URL: 'https://esccbbkmbjpkhqdrirpx.supabase.co',
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzY2NiYmttYmpwa2hxZHJpcnB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM5Mzk5MzIsImV4cCI6MjEwOTUxNTkzMn0.M_XVSXv8B2OfOnycIkUfyDM4lITsw0UJMk22CdHUnhI'
+};
+
+const DEMO = !CONFIG.SUPABASE_URL;
+const SEED = /*SEED*/null;
+
+/* ---------- 공통 ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clone = o => JSON.parse(JSON.stringify(o));
+const nowISO = () => new Date().toISOString();
+const padEmp = v => { if (v == null) return ''; let s = String(v).trim(); if (/^\d+$/.test(s) && s.length < 5) s = s.padStart(5, '0'); return s; };
+const fmtDT = s => s ? new Date(s).toLocaleString('ko-KR', {month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'}) : '';
+const GRP_ORDER = ['공통', '직무', '리더십'];
+const STATUS = {
+  none: ['미작성', 'gray'], draft: ['작성중', 'amber'], submitted: ['제출완료', 'green'],
+  filled: ['입력완료', 'blue'], wait: ['1차 대기', 'gray2'], end: ['1차 종결', 'muted'], noform: ['평가표 미지정', 'red'], noev: ['평가자 미지정', 'red']
+};
+const badge = k => `<span class="badge b-${STATUS[k][1]}">${STATUS[k][0]}</span>`;
+const GRADES = ['S', 'A', 'B', 'C', 'D'];
+const histYears = () => [ST.settings.cycle - 3, ST.settings.cycle - 2, ST.settings.cycle - 1];
+// 최근 3년 등급 표시 (map: 'emp-year' -> grade)
+function histHtml(map, emp) {
+  return `<span class="hist">${histYears().map(y => { const g = map.get(emp + '-' + y); return `<span class="hg">${String(y).slice(2)}년 <b class="g-${g || 'none'}">${g || '-'}</b></span>`; }).join('')}</span>`;
+}
+const histMap = rows => new Map((rows || []).map(h => [h.emp_no + '-' + h.year, h.grade]));
+
+function toast(msg, isErr) {
+  const d = document.createElement('div');
+  d.className = 'tst' + (isErr ? ' err' : '');
+  d.textContent = msg;
+  $('#toast').appendChild(d);
+  setTimeout(() => d.remove(), isErr ? 4200 : 2400);
+}
+function modal(html, wide) {
+  $('#modal').innerHTML = `<div class="mask"><div class="modal ${wide ? 'wide' : ''}">${html}</div></div>`;
+  return $('#modal .modal');
+}
+function closeModal() { $('#modal').innerHTML = ''; }
+function confirmBox(title, msg, okText = '확인', danger = false) {
+  return new Promise(res => {
+    const m = modal(`<h3>${esc(title)}</h3><p>${esc(msg)}</p>
+      <div class="acts"><button class="btn" data-x="n">취소</button><button class="btn ${danger ? 'danger' : 'pri'}" data-x="y">${esc(okText)}</button></div>`);
+    m.addEventListener('click', e => { const x = e.target.dataset.x; if (x) { closeModal(); res(x === 'y'); } });
+  });
+}
+function errMsg(e) {
+  const m = (e && (e.message || e.error_description)) || String(e);
+  if (/Invalid login credentials/i.test(m)) return '이메일 또는 비밀번호가 올바르지 않습니다';
+  if (/Password should be at least/i.test(m)) return '비밀번호가 너무 짧습니다';
+  if (/same.*password|different from the old/i.test(m)) return '기존 비밀번호와 다른 비밀번호를 입력하세요';
+  if (/Failed to fetch|NetworkError/i.test(m)) return '서버에 연결할 수 없습니다. 인터넷 연결을 확인하세요';
+  return m;
+}
+// 100점 환산 (배점 비율 반영, 배점이 비어 있으면 동일 비중) — 모든 역량 입력 시에만
+function score100(items, scores) {
+  if (!items || !items.length || items.some(i => scores[i.seq] == null)) return null;
+  const noW = items.some(i => i.weight_ref == null || i.weight_ref === '') || items.reduce((a, i) => a + (+i.weight_ref || 0), 0) === 0;
+  if (noW) return Math.round(items.reduce((a, i) => a + scores[i.seq], 0) / items.length * 10 * 10) / 10;
+  const ws = items.reduce((a, i) => a + +i.weight_ref, 0);
+  return Math.round(items.reduce((a, i) => a + scores[i.seq] * +i.weight_ref, 0) / ws * 10 * 10) / 10;
+}
+function cleanScores(items, scores, submit) {
+  const out = {};
+  for (const [k, v] of Object.entries(scores || {})) {
+    if (v === null || v === undefined || v === '') continue;
+    if (!items.some(i => String(i.seq) === String(k))) throw new Error('잘못된 문항입니다');
+    if (!Number.isInteger(v) || v < 0 || v > 10) throw new Error('점수는 0~10 정수만 입력할 수 있습니다');
+    out[k] = v;
+  }
+  if (submit && Object.keys(out).length !== items.length) throw new Error('모든 역량에 점수를 입력해야 제출할 수 있습니다');
+  return out;
+}
+// 대상자 일괄 반영 계획: 이미 평가가 있는 사람의 평가표·평가자 변경은 건너뜀
+function planTargets(existing, evTargetIds, list, overwrite) {
+  const byEmp = new Map(existing.map(t => [t.emp_no, t]));
+  const ins = [], upd = [], skip = [];
+  for (let r of list) {
+    const t = byEmp.get(r.emp_no);
+    if (!t) { ins.push(r); continue; }
+    if (!overwrite) r = { ...r, form_code: t.form_code, e1_emp: t.e1_emp, e2_emp: t.e2_emp };
+    const changed = (r.form_code || null) !== (t.form_code || null) || (r.e1_emp || null) !== (t.e1_emp || null) || (r.e2_emp || null) !== (t.e2_emp || null);
+    if (changed && evTargetIds.has(t.id)) { skip.push(r.name); continue; }
+    upd.push({ ...r, id: t.id });
+  }
+  return { ins, upd, skip };
+}
+
+/* =============================================================
+   데이터 처리 - 운영(Supabase)
+   ============================================================= */
+function makeSupabaseApi() {
+  const sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+  const chk = r => { if (r.error) throw r.error; return r.data; };
+  return {
+    demo: false,
+    async signIn(email, pw) { chk(await sb.auth.signInWithPassword({ email: email.trim(), password: pw })); },
+    async signOut() { await sb.auth.signOut(); },
+    async hasSession() { const { data } = await sb.auth.getSession(); return !!data.session; },
+    async me() { const d = chk(await sb.rpc('my_account')); return (d && d[0]) || null; },
+    async changePassword(pw) { chk(await sb.auth.updateUser({ password: pw })); chk(await sb.rpc('mark_pw_changed')); },
+    async settings() { return chk(await sb.from('settings').select('*').eq('id', 1).single()); },
+    async myTargets() { return chk(await sb.rpc('my_targets')) || []; },
+    async formItems(code) { return chk(await sb.from('form_items').select('*').eq('form_code', code).order('seq')); },
+    async stage1For(tids) { if (!tids.length) return []; return chk(await sb.from('evaluations').select('target_id,scores,status,submitted_at').in('target_id', tids).eq('stage', 1).eq('status', 'submitted')) || []; },
+    async myEvaluations(emp) { return chk(await sb.from('evaluations').select('target_id,stage,scores,status').eq('evaluator_emp', emp)) || []; },
+    async itemsFor(codes) { if (!codes.length) return []; return chk(await sb.from('form_items').select('form_code,seq,weight_ref').in('form_code', codes).range(0, 9999)) || []; },
+    async myHistory() { return chk(await sb.from('history').select('*').range(0, 9999)) || []; },
+    async myEvaluation(tid, stage, emp) {
+      return chk(await sb.from('evaluations').select('*').eq('target_id', tid).eq('stage', stage).eq('evaluator_emp', emp).maybeSingle());
+    },
+    async submitAll(stage) { return chk(await sb.rpc('submit_all', { p_stage: stage })); },
+    async saveEvaluation(tid, stage, scores, submit) {
+      chk(await sb.rpc('save_evaluation', { p_target: tid, p_stage: stage, p_scores: scores, p_submit: submit }));
+    },
+    adm: {
+      async loadAll() {
+        const s = chk(await sb.from('settings').select('*').eq('id', 1).single());
+        const [targets, evaluations, accounts, forms, items, history] = await Promise.all([
+          sb.from('targets').select('*').eq('cycle', s.cycle).order('id'),
+          sb.from('evaluations').select('*'),
+          sb.from('accounts').select('*').order('emp_no'),
+          sb.from('forms').select('*').order('code'),
+          sb.from('form_items').select('*').order('form_code').order('seq').range(0, 9999),
+          sb.from('history').select('*').range(0, 9999)
+        ].map(p => p.then(chk)));
+        const tids = new Set(targets.map(t => t.id));
+        return { settings: s, targets, evaluations: evaluations.filter(e => tids.has(e.target_id)), accounts, forms, items, history };
+      },
+      async updateTarget(id, p, force) {
+        chk(await sb.rpc('admin_update_target', { p_id: id, p_form: p.form_code || null, p_e1: p.e1_emp || null, p_e2: p.e2_emp || null, p_included: p.included, p_note: p.note || null, p_force: !!force }));
+      },
+      async addTarget(t) { chk(await sb.from('targets').insert(t)); },
+      async reopen(tid, stage) { chk(await sb.rpc('admin_reopen', { p_target: tid, p_stage: stage })); },
+      async saveSettings(s) { chk(await sb.from('settings').update({ cycle: s.cycle, is_open: s.is_open, adj_target: s.adj_target }).eq('id', 1)); },
+      async saveAccount(a, oldEmp) {
+        if (oldEmp && oldEmp !== a.emp_no) chk(await sb.from('accounts').update({ emp_no: a.emp_no, name: a.name, email: a.email, role: a.role }).eq('emp_no', oldEmp));
+        else chk(await sb.from('accounts').upsert({ emp_no: a.emp_no, name: a.name, email: a.email, role: a.role }, { onConflict: 'emp_no' }));
+      },
+      async upsertHistory(list) { if (list.length) chk(await sb.from('history').upsert(list, { onConflict: 'emp_no,year' })); },
+      async upsertAccounts(list) {
+        // 회사메일이 빈 행은 기존 이메일을 지우지 않도록 이메일 없이 반영
+        const withMail = list.filter(a => a.email), noMail = list.filter(a => !a.email).map(({ email, ...r }) => r);
+        if (withMail.length) chk(await sb.from('accounts').upsert(withMail, { onConflict: 'emp_no' }));
+        if (noMail.length) chk(await sb.from('accounts').upsert(noMail, { onConflict: 'emp_no' }));
+      },
+      async upsertForms(forms, items) {
+        if (!forms.length) return;
+        chk(await sb.from('forms').upsert(forms, { onConflict: 'code' }));
+        const codes = forms.map(f => f.code);
+        chk(await sb.from('form_items').delete().in('form_code', codes));
+        if (items.length) chk(await sb.from('form_items').insert(items));
+      },
+      async upsertTargets(cycle, list, overwrite) {
+        const existing = chk(await sb.from('targets').select('*').eq('cycle', cycle));
+        const ev = chk(await sb.from('evaluations').select('target_id'));
+        const plan = planTargets(existing, new Set(ev.map(e => e.target_id)), list, overwrite);
+        if (plan.ins.length) chk(await sb.from('targets').insert(plan.ins.map(r => ({ ...r, cycle }))));
+        if (plan.upd.length) chk(await sb.from('targets').upsert(plan.upd.map(r => ({ ...r, cycle })), { onConflict: 'id' }));
+        return { inserted: plan.ins.length, updated: plan.upd.length, skipped: plan.skip };
+      }
+    }
+  };
+}
+
+/* =============================================================
+   데이터 처리 - 데모 (브라우저 메모리)
+   ============================================================= */
+function makeDemoApi() {
+  const S = { settings: { id: 1, cycle: 2026, is_open: true, adj_target: 80 }, accounts: [], forms: [], items: [], targets: [], evaluations: [], history: [] };
+  (SEED.history || []).forEach(([emp_no, year, grade]) => S.history.push({ emp_no, year, grade }));
+  let cur = null, nextId = 1;
+  SEED.forms.forEach(([code, name, kind]) => S.forms.push({ code, name, kind }));
+  SEED.items.forEach(([form_code, seq, grp, name, weight_ref, ind1, ind2]) => S.items.push({ form_code, seq, grp, name, weight_ref, ind1, ind2 }));
+  SEED.accounts.forEach(([emp_no, name, email, role]) => S.accounts.push({ emp_no, name, email, role, pw_changed: true }));
+  SEED.targets.forEach(([emp_no, name, dept, team, grade, pos, form_code, e1, e2, inc]) =>
+    S.targets.push({ id: nextId++, cycle: 2026, emp_no, name, dept, team, grade, pos, form_code: form_code || null, e1_emp: e1 || null, e2_emp: e2 || null, included: inc, note: '' }));
+  const itemsOf = c => S.items.filter(i => i.form_code === c).sort((a, b) => a.seq - b.seq);
+  // 시연용 진행 데이터: 공공영업팀 1차 일부 제출
+  S.targets.filter(t => t.e1_emp === '09929' && t.included).forEach((t, i) => {
+    const sc = {}; itemsOf(t.form_code).forEach((it, j) => sc[it.seq] = Math.min(10, 4 + ((i * 7 + j * 3) % 6) + (j < 5 ? i % 3 : 0)));
+    S.evaluations.push({ target_id: t.id, stage: 1, evaluator_emp: '09929', scores: sc, status: i < 4 ? 'submitted' : 'draft', updated_at: nowISO(), submitted_at: i < 4 ? nowISO() : null });
+  });
+  const acc = () => S.accounts.find(a => a.email && a.email.toLowerCase() === cur);
+  const meEmp = () => (acc() || {}).emp_no || null;
+  const isAdmin = () => (acc() || {}).role === 'admin';
+  const need = () => { if (!isAdmin()) throw new Error('관리자만 가능합니다'); };
+  const ev = (tid, st) => S.evaluations.find(e => e.target_id === tid && e.stage === st);
+  const delay = () => new Promise(r => setTimeout(r, 120));
+  return {
+    demo: true,
+    async signIn(email) {
+      await delay();
+      const a = S.accounts.find(a => a.email && a.email.toLowerCase() === String(email).trim().toLowerCase());
+      if (!a) throw new Error('등록되지 않은 이메일입니다');
+      cur = a.email.toLowerCase();
+    },
+    async signOut() { cur = null; },
+    async hasSession() { return !!cur; },
+    async me() { return clone(acc() || null); },
+    async changePassword() { await delay(); acc().pw_changed = true; },
+    async settings() { return clone(S.settings); },
+    async myTargets() {
+      await delay();
+      const me = meEmp(), out = [];
+      const fn = c => (S.forms.find(f => f.code === c) || {}).name || null;
+      const row = (t, stage, e, s1) => ({ target_id: t.id, stage, emp_no: t.emp_no, name: t.name, dept: t.dept, team: t.team, grade: t.grade, pos: t.pos, form_code: t.form_code, form_name: fn(t.form_code), status: e ? e.status : 'none', stage1_done: s1, updated_at: e ? e.updated_at : null });
+      S.targets.filter(t => t.cycle === S.settings.cycle && t.included).forEach(t => {
+        if (t.e1_emp === me) out.push(row(t, 1, ev(t.id, 1), true));
+        if (t.e2_emp === me) { const e1 = ev(t.id, 1); out.push(row(t, 2, ev(t.id, 2), !!e1 && e1.status === 'submitted')); }
+      });
+      return out;
+    },
+    async formItems(code) { return clone(itemsOf(code)); },
+    async stage1For(tids) {
+      const me = meEmp();
+      return clone(S.evaluations.filter(e => tids.includes(e.target_id) && e.stage === 1 && e.status === 'submitted' && (S.targets.find(t => t.id === e.target_id) || {}).e2_emp === me));
+    },
+    async myEvaluations() { const me = meEmp(); return clone(S.evaluations.filter(e => e.evaluator_emp === me)); },
+    async itemsFor(codes) { return clone(S.items.filter(i => codes.includes(i.form_code)).map(i => ({ form_code: i.form_code, seq: i.seq, weight_ref: i.weight_ref }))); },
+    async myHistory() {
+      const me = meEmp();
+      const emps = new Set(S.targets.filter(t => t.cycle === S.settings.cycle && t.included && (t.e1_emp === me || t.e2_emp === me)).map(t => t.emp_no));
+      return clone(S.history.filter(h => emps.has(h.emp_no)));
+    },
+    async myEvaluation(tid, stage) { const e = ev(tid, stage); return e && e.evaluator_emp === meEmp() ? clone(e) : null; },
+    async submitAll(stage) {
+      await delay();
+      const me = meEmp();
+      if (!S.settings.is_open) throw new Error('평가 기간이 아닙니다');
+      const cand = S.targets.filter(t => t.cycle === S.settings.cycle && t.included && t.form_code && (stage === 1 ? t.e1_emp : t.e2_emp) === me
+        && (stage === 1 || ((ev(t.id, 1) || {}).status === 'submitted')) && (ev(t.id, stage) || {}).status !== 'submitted');
+      const miss = cand.filter(t => { const e = ev(t.id, stage); return !e || Object.keys(e.scores).length !== itemsOf(t.form_code).length; }).map(t => t.name).sort();
+      if (miss.length) throw new Error('점수를 모두 입력하지 않은 대상자가 있습니다: ' + miss.join(', '));
+      if (!cand.length) throw new Error('최종 제출할 대상자가 없습니다');
+      cand.forEach(t => { const e = ev(t.id, stage); e.status = 'submitted'; e.submitted_at = nowISO(); });
+      return cand.length;
+    },
+    async saveEvaluation(tid, stage, scores, submit) {
+      await delay();
+      const me = meEmp();
+      if (!S.settings.is_open) throw new Error('평가 기간이 아닙니다');
+      const t = S.targets.find(x => x.id === tid && x.cycle === S.settings.cycle && x.included);
+      if (!t) throw new Error('대상자를 찾을 수 없습니다');
+      if ((stage === 1 ? t.e1_emp : t.e2_emp) !== me) throw new Error('평가 권한이 없습니다');
+      if (stage === 2) { const e1 = ev(tid, 1); if (!e1 || e1.status !== 'submitted') throw new Error('1차 평가가 아직 제출되지 않았습니다'); }
+      const e = ev(tid, stage);
+      if (e && e.status === 'submitted') throw new Error('이미 제출된 평가입니다');
+      const items = itemsOf(t.form_code);
+      if (!items.length) throw new Error('평가표가 지정되지 않았습니다');
+      const clean = cleanScores(items, scores, submit);
+      const rec = { target_id: tid, stage, evaluator_emp: me, scores: clean, status: submit ? 'submitted' : 'draft', updated_at: nowISO(), submitted_at: submit ? nowISO() : null };
+      if (e) Object.assign(e, rec); else S.evaluations.push(rec);
+    },
+    adm: {
+      async loadAll() {
+        need(); await delay();
+        const targets = S.targets.filter(t => t.cycle === S.settings.cycle);
+        const tids = new Set(targets.map(t => t.id));
+        return clone({ settings: S.settings, targets, evaluations: S.evaluations.filter(e => tids.has(e.target_id)), accounts: S.accounts, forms: S.forms, items: S.items, history: S.history });
+      },
+      async updateTarget(id, p, force) {
+        need(); await delay();
+        const t = S.targets.find(x => x.id === id);
+        const f = p.form_code || null, e1 = p.e1_emp || null, e2 = p.e2_emp || null;
+        let aff = [];
+        if (f !== t.form_code) aff = [1, 2]; else { if (e1 !== t.e1_emp) aff.push(1); if (e2 !== t.e2_emp) aff.push(2); }
+        if (S.evaluations.some(e => e.target_id === id && aff.includes(e.stage))) {
+          if (!force) throw new Error('HAS_EVAL');
+          S.evaluations = S.evaluations.filter(e => !(e.target_id === id && aff.includes(e.stage)));
+        }
+        Object.assign(t, { form_code: f, e1_emp: e1, e2_emp: e2, included: p.included, note: p.note || '' });
+      },
+      async addTarget(t) {
+        need(); await delay();
+        if (S.targets.some(x => x.cycle === t.cycle && x.emp_no === t.emp_no)) throw new Error('이미 등록된 사번입니다');
+        S.targets.push({ id: nextId++, ...t });
+      },
+      async reopen(tid, stage) { need(); const e = ev(tid, stage); if (e) { e.status = 'draft'; e.submitted_at = null; } },
+      async saveSettings(s) { need(); S.settings.cycle = s.cycle; S.settings.is_open = s.is_open; S.settings.adj_target = s.adj_target; },
+      async saveAccount(a, oldEmp) {
+        need();
+        if (a.email && S.accounts.some(x => x.email && x.email.toLowerCase() === a.email.toLowerCase() && x.emp_no !== (oldEmp || a.emp_no))) throw new Error('이미 사용 중인 이메일입니다');
+        const x = S.accounts.find(x => x.emp_no === (oldEmp || a.emp_no));
+        if (x) {
+          if (oldEmp && oldEmp !== a.emp_no) S.targets.forEach(t => { if (t.e1_emp === oldEmp) t.e1_emp = a.emp_no; if (t.e2_emp === oldEmp) t.e2_emp = a.emp_no; });
+          Object.assign(x, { emp_no: a.emp_no, name: a.name, email: a.email, role: a.role });
+        } else S.accounts.push({ ...a, pw_changed: false });
+      },
+      async upsertHistory(list) {
+        need();
+        list.forEach(h => { const x = S.history.find(x => x.emp_no === h.emp_no && x.year === h.year); if (x) x.grade = h.grade; else S.history.push({ ...h }); });
+      },
+      async upsertAccounts(list) {
+        need();
+        list.forEach(a => {
+          const x = S.accounts.find(x => x.emp_no === a.emp_no), r = { ...a };
+          if (!r.email) delete r.email;
+          if (x) Object.assign(x, r); else S.accounts.push({ email: null, ...r, pw_changed: false });
+        });
+      },
+      async upsertForms(forms, items) {
+        need();
+        forms.forEach(f => { const x = S.forms.find(x => x.code === f.code); if (x) Object.assign(x, f); else S.forms.push({ ...f }); });
+        const codes = new Set(forms.map(f => f.code));
+        S.items = S.items.filter(i => !codes.has(i.form_code)).concat(items.map(i => ({ ...i })));
+      },
+      async upsertTargets(cycle, list, overwrite) {
+        need();
+        const existing = S.targets.filter(t => t.cycle === cycle);
+        const plan = planTargets(existing, new Set(S.evaluations.map(e => e.target_id)), list, overwrite);
+        plan.ins.forEach(r => S.targets.push({ id: nextId++, cycle, ...r }));
+        plan.upd.forEach(r => Object.assign(S.targets.find(t => t.id === r.id), r));
+        return { inserted: plan.ins.length, updated: plan.upd.length, skipped: plan.skip };
+      }
+    }
+  };
+}
+
+const api = DEMO ? (SEED ? makeDemoApi() : null) : makeSupabaseApi();
+
+/* =============================================================
+   화면 상태
+   ============================================================= */
+const ST = { me: null, settings: null, view: 'my', my: [], ev: null, adm: null, f: {} };
+
+async function boot() {
+  if (DEMO && !SEED) {
+    $('#app').innerHTML = `<div class="login"><div class="login-card"><div class="brand">ATEC COMPUTER</div><h1>설정 필요</h1>
+      <p class="sub">이 파일 위쪽 CONFIG에 Supabase 주소(SUPABASE_URL)와 공개 키(SUPABASE_ANON_KEY)를 입력해야 사용할 수 있습니다.</p></div></div>`;
+    return;
+  }
+  try {
+    if (await api.hasSession()) await afterLogin(); else renderLogin();
+  } catch (e) { renderLogin(errMsg(e)); }
+}
+
+/* ---------- 로그인 ---------- */
+function renderLogin(err = '') {
+  document.body.classList.remove('has-foot');
+  if (typeof toTopBtn !== 'undefined') toTopBtn.style.bottom = '';
+  const demoOpts = DEMO ? SEED.accounts.filter(a => a[2]).map(a => `<option value="${esc(a[2])}">${esc(a[1])} (${esc(a[3] === 'admin' ? '관리자' : '평가자')})</option>`).join('') : '';
+  $('#app').innerHTML = `
+  <div class="login"><div class="login-card">
+    <div class="brand">ATEC COMPUTER</div>
+    <h1>역량평가</h1>
+    <p class="sub">평가자 로그인</p>
+    <form id="loginForm">
+      <label class="field"><span>회사메일</span><input type="email" name="email" autocomplete="username" required></label>
+      <label class="field"><span>비밀번호</span><input type="password" name="pw" autocomplete="current-password" ${DEMO ? '' : 'required'}></label>
+      <div class="err">${esc(err)}</div>
+      <button class="btn pri" type="submit">로그인</button>
+    </form>
+    <p class="hint">임시 비밀번호는 인사총무파트에서 메일로 안내합니다. 첫 로그인 후 비밀번호를 변경해 주세요.</p>
+    ${DEMO ? `<div class="demo-box"><b>데모 모드</b> — 서버 연결 없이 화면만 확인합니다. 계정을 고르면 비밀번호 없이 로그인됩니다.
+      <select class="inp" id="demoPick"><option value="">계정 선택</option>${demoOpts}</select></div>` : ''}
+  </div></div>`;
+  const f = $('#loginForm');
+  f.addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = f.querySelector('button'); btn.disabled = true; btn.textContent = '로그인 중…';
+    try { await api.signIn(f.email.value, f.pw.value); await afterLogin(); }
+    catch (er) { renderLogin(errMsg(er)); }
+  });
+  if (DEMO) $('#demoPick').addEventListener('change', e => { if (e.target.value) { f.email.value = e.target.value; f.requestSubmit(); } });
+}
+
+async function afterLogin() {
+  ST.me = await api.me();
+  if (!ST.me) {
+    await api.signOut();
+    return renderLogin('평가자 명단에 등록되지 않은 계정입니다. 인사총무파트에 문의하세요.');
+  }
+  ST.settings = await api.settings();
+  if (!ST.me.pw_changed) return renderChangePw(true);
+  await go(ST.me.role === 'admin' ? 'progress' : 'my');
+}
+
+function renderChangePw(first) {
+  const m = modal(`<h3>${first ? '비밀번호 변경 (첫 로그인)' : '비밀번호 변경'}</h3>
+    <p>${first ? '임시 비밀번호로 로그인했습니다. 새 비밀번호를 설정해야 평가를 시작할 수 있습니다.' : '새 비밀번호를 입력하세요.'}</p>
+    <form id="pwForm">
+      <label class="field"><span>새 비밀번호 (8자 이상)</span><input type="password" name="p1" minlength="8" required autocomplete="new-password"></label>
+      <label class="field"><span>새 비밀번호 확인</span><input type="password" name="p2" minlength="8" required autocomplete="new-password"></label>
+      <div class="err"></div>
+      <div class="acts">${first ? '<button type="button" class="btn" data-x="logout">로그아웃</button>' : '<button type="button" class="btn" data-x="close">취소</button>'}<button class="btn pri" type="submit">변경</button></div>
+    </form>`);
+  if (first) $('#app').innerHTML = '';
+  m.addEventListener('click', async e => {
+    if (e.target.dataset.x === 'close') closeModal();
+    if (e.target.dataset.x === 'logout') { closeModal(); await api.signOut(); renderLogin(); }
+  });
+  $('#pwForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const f = e.target, er = f.querySelector('.err');
+    if (f.p1.value !== f.p2.value) { er.textContent = '두 비밀번호가 다릅니다'; return; }
+    try {
+      await api.changePassword(f.p1.value);
+      ST.me.pw_changed = true; closeModal(); toast('비밀번호를 변경했습니다');
+      if (first) await go(ST.me.role === 'admin' ? 'progress' : 'my');
+    } catch (x) { er.textContent = errMsg(x); }
+  });
+}
+
+/* ---------- 레이아웃 ---------- */
+const TABS = [['my', '내 평가'], ['progress', '진행 현황'], ['targets', '대상자·평가표 지정'], ['forms', '평가표'], ['accounts', '평가자 계정'], ['settings', '설정·업로드']];
+function shell(inner) {
+  const admin = ST.me.role === 'admin';
+  const tabs = TABS.filter(t => admin || t[0] === 'my').map(([k, l]) => `<button class="tab ${ST.view === k ? 'on' : ''}" data-go="${k}">${l}</button>`).join('');
+  return `
+  <header class="top"><div class="top-in ${ST.view !== 'my' ? 'wide' : ''}">
+    <div class="logo">ATEC <b>역량평가</b> ${esc(ST.settings.cycle)}</div>
+    <nav class="tabs">${tabs}</nav>
+    <div class="who"><span class="nmtxt">${esc(ST.me.name)}${admin ? ' · 관리자' : ''}</span>
+      <button class="btn sm ghost" data-act="pw">비밀번호 변경</button>
+      <button class="btn sm" data-act="logout">로그아웃</button></div>
+  </div></header>
+  ${DEMO ? '<div class="banner demo">데모 모드입니다. 입력한 내용은 새로고침하면 사라집니다.</div>' : ''}
+  ${!ST.settings.is_open ? '<div class="banner">현재 평가 기간이 아닙니다. 조회만 가능합니다.</div>' : ''}
+  <main class="${ST.view !== 'my' ? 'wide' : ''}">${inner}</main>`;
+}
+async function go(view) {
+  if (ST.ev && ST.ev.dirty) await doAutosave();
+  if (ST.ev && ST.ev.dirty && !(await confirmBox('저장하지 않은 점수', '저장하지 않은 점수가 있습니다. 이동하면 입력한 내용이 사라집니다.', '이동', true))) return;
+  ST.ev = null; ST.view = view; document.body.classList.remove('has-foot'); toTopBtn.style.bottom = '';
+  $('#app').innerHTML = shell('<div class="loading">불러오는 중…</div>');
+  try {
+    if (view === 'my') {
+      ST.my = await api.myTargets();
+      const codes = [...new Set(ST.my.map(r => r.form_code).filter(Boolean))];
+      const s2 = ST.my.filter(r => r.stage === 2 && r.stage1_done).map(r => r.target_id);
+      const [evs, its, p1] = await Promise.all([api.myEvaluations(ST.me.emp_no), api.itemsFor(codes), api.stage1For(s2)]);
+      ST.myP1 = new Map(p1.map(e => [e.target_id, e]));
+      ST.myEv = new Map(evs.map(e => [e.target_id + '-' + e.stage, e]));
+      ST.myItems = {}; its.forEach(i => (ST.myItems[i.form_code] = ST.myItems[i.form_code] || []).push(i));
+      renderMy();
+    }
+    else { ST.adm = await api.adm.loadAll(); ST.settings = ST.adm.settings; renderAdmin(); }
+  } catch (e) { $('#app').innerHTML = shell(`<div class="card empty">불러오지 못했습니다: ${esc(errMsg(e))}</div>`); }
+  window.scrollTo(0, 0);
+}
+function renderAdmin() {
+  ({ progress: renderProgress, targets: renderTargets, forms: renderForms, accounts: renderAccounts, settings: renderSettings })[ST.view]();
+}
+document.addEventListener('click', async e => {
+  const g = e.target.closest('[data-go]'); if (g) return go(g.dataset.go);
+  const a = e.target.closest('[data-act]'); if (!a) return;
+  const act = a.dataset.act;
+  if (act === 'logout') {
+    if (ST.ev && ST.ev.dirty) await doAutosave();
+    if (ST.ev && ST.ev.dirty && !(await confirmBox('저장하지 않은 점수', '저장하지 않은 점수가 있습니다. 로그아웃할까요?', '로그아웃', true))) return;
+    ST.ev = null; await api.signOut(); renderLogin(); return;
+  }
+  if (act === 'pw') return renderChangePw(false);
+  if (HANDLERS[act]) HANDLERS[act](a, e);
+});
+window.addEventListener('beforeunload', e => { if (ST.ev && ST.ev.dirty) { e.preventDefault(); e.returnValue = ''; } });
+const HANDLERS = {};
+
+/* =============================================================
+   평가자: 내 평가
+   ============================================================= */
+function myKey(r) {
+  if (!r.form_code) return 'noform';
+  if (r.stage === 2 && !r.stage1_done) return 'wait';
+  if (r.status === 'draft') { const x = myScoreInfo(r); if (x && x.filled === x.n) return 'filled'; }
+  return r.status;
+}
+function renderMy() {
+  const sec = stage => {
+    const rows = ST.my.filter(r => r.stage === stage).sort((a, b) => (a.dept || '').localeCompare(b.dept || '') || (a.team || '').localeCompare(b.team || '') || a.name.localeCompare(b.name));
+    if (!rows.length) return '';
+    const done = rows.filter(r => r.status === 'submitted').length;
+    const sa = stageAvg(stage);
+    return `<div class="sec-h"><h3>${stage}차 평가</h3><span>${rows.length}명 중 ${done}명 제출</span><span class="sec-tgt">· 내 평균 ${sa ? `<b>${sa.avg}</b>점` : '-'} / 목표 ${ADJ()}점</span>${rows.some(r => ST.myEv.get(r.target_id + '-' + stage)) ? `<button class="btn sm" data-act="myCompare" data-s="${stage}">점수 비교</button>` : ''}</div>
+      <div class="list">${rows.map(r => {
+        const k = myKey(r);
+        const btn = k === 'submitted' ? `<button class="btn sm" data-act="open" data-t="${r.target_id}" data-s="${stage}">보기</button>`
+          : (k === 'wait' || k === 'noform') ? `<button class="btn sm" disabled>${k === 'wait' ? '1차 제출 후 가능' : '평가 불가'}</button>`
+          : `<button class="btn sm ${k === 'filled' ? '' : 'pri'}" data-act="open" data-t="${r.target_id}" data-s="${stage}">${k === 'filled' ? '수정' : k === 'draft' ? '이어서 작성' : '평가하기'}</button>`;
+        return `<div class="trow">
+          <div class="nm">${esc(r.name)}</div>
+          <div class="meta"><div>${esc(r.dept || '')}${r.team && r.team !== r.dept ? ' · ' + esc(r.team) : ''} · ${esc(r.grade || '')}${r.pos ? ' / ' + esc(r.pos) : ''}</div>
+            <div style="color:var(--muted)">${esc(r.form_name || '평가표 미지정')}</div></div>
+          <div class="sc">${myScoreCell(r)}</div><div class="st">${badge(k)}</div>${btn}</div>`;
+      }).join('')}</div>${finalBar(stage, rows)}`;
+  };
+  const total = ST.my.length, done = ST.my.filter(r => r.status === 'submitted').length, st = myStats();
+  const body = ST.my.length ? `${adjNoteHtml()}
+    <div class="kpis">
+      <div class="kpi"><div class="l">평가할 인원(건)</div><div class="v">${total}</div></div>
+      <div class="kpi"><div class="l">제출 완료</div><div class="v">${done} <small>/ ${total}</small></div><div class="bar"><i style="width:${total ? done / total * 100 : 0}%"></i></div></div>
+      <div class="kpi"><div class="l">내가 준 점수 평균 (100점 환산)</div><div class="v">${st ? st.avg : '-'} <small>조정 기준 ${ADJ()}점</small></div>
+        <div style="font-size:14px;color:var(--ink2)">${st ? `입력 완료 ${st.n}건 · 점수 차이(편차) ${st.sd}점` : '모든 역량을 입력하면 계산됩니다'}</div></div>
+    </div>${statsHint(st)}${sec(1)}${sec(2)}`
+    : `<div class="card empty">배정된 평가 대상자가 없습니다.</div>`;
+  $('#app').innerHTML = shell(`<h2>내 평가</h2><p class="desc">역량별로 0~10점(정수)을 입력합니다. 점수는 자동 저장되며, 모두 입력한 뒤 차수별 <b>[최종 제출]</b>을 누르면 완료됩니다. 최종 제출 후에는 수정할 수 없습니다.</p>${body}`);
+}
+
+const ADJ = () => ST.settings.adj_target ?? 80;
+function adjNoteHtml() {
+  return `<div class="note info adj"><b>조정계수 안내</b> — 최종 점수는 부서(사업부·실)별 평균이 <b>${ADJ()}점</b>이 되도록 조정됩니다.
+    실장·사업부장은 별도 그룹, 인원이 적은 그룹은 전사 평균 기준으로 조정합니다.<br>
+    모두 높게 주면 조정 후 차이만 줄어들 뿐 유리해지지 않습니다. <b>잘한 사람과 보완이 필요한 사람의 차이가 드러나도록</b> 평가해 주세요.</div>`;
+}
+// 내가 준 점수(모든 역량 입력 완료분)의 100점 환산 평균·편차
+function myStats(stage) {
+  const v = ST.my.filter(r => !stage || r.stage === stage).map(r => myScoreInfo(r)).filter(x => x && x.s100 != null).map(x => x.s100);
+  if (!v.length) return null;
+  const avg = v.reduce((a, b) => a + b, 0) / v.length;
+  const sd = v.length > 1 ? Math.sqrt(v.reduce((a, b) => a + (b - avg) ** 2, 0) / (v.length - 1)) : 0;
+  return { n: v.length, avg: Math.round(avg * 10) / 10, sd: Math.round(sd * 10) / 10 };
+}
+// 입력 중(일부 역량만 입력) 100점 환산 — 입력한 역량만으로 계산
+function partial100(items, scores) {
+  const its = items.filter(i => scores[i.seq] != null); if (!its.length) return null;
+  const noW = items.some(i => i.weight_ref == null || i.weight_ref === '');
+  const ws = noW ? its.length : its.reduce((a, i) => a + +i.weight_ref, 0); if (!ws) return null;
+  return Math.round(its.reduce((a, i) => a + scores[i.seq] * (noW ? 1 : +i.weight_ref), 0) / ws * 10 * 10) / 10;
+}
+// 해당 차수에서 내가 준 점수 평균 (cur: 지금 입력 중인 대상자 점수로 대체)
+function stageAvg(stage, curTid, curVal) {
+  const v = ST.my.filter(r => r.stage === stage && r.target_id !== curTid).map(r => myScoreInfo(r)).filter(x => x && x.s100 != null).map(x => x.s100);
+  if (curVal != null) v.push(curVal);
+  if (!v.length) return null;
+  return { n: v.length, avg: Math.round(v.reduce((a, b) => a + b, 0) / v.length * 10) / 10 };
+}
+function targetHtml(st, label) {
+  if (!st) return `<span>${label} 평균 - / 목표 <b>${ADJ()}</b>점</span>`;
+  const d = Math.round((st.avg - ADJ()) * 10) / 10, cls = Math.abs(d) <= 3 ? 'ok' : d > 0 ? 'hi' : 'lo';
+  const pct = v => Math.max(0, Math.min(100, v));
+  return `<span>${label} 평균 <b>${st.avg}</b>점 / 목표 <b>${ADJ()}</b>점</span><span class="d ${cls}">${d > 0 ? '+' : ''}${d}</span>
+    <span class="gauge" title="막대: 내 평균, 세로선: 목표 ${ADJ()}점"><i style="width:${pct(st.avg)}%"></i><em style="left:${pct(ADJ())}%"></em></span><span class="tn" style="font-size:13px;color:var(--muted)">${st.n}명 기준</span>`;
+}
+function statsHint(st) {
+  if (!st || st.n < 3) return '';
+  const m = [];
+  if (st.avg >= ADJ() + 10) m.push(`평균이 조정 기준(${ADJ()}점)보다 ${Math.round(st.avg - ADJ())}점 높습니다. 조정되면 전체적으로 낮아집니다.`);
+  if (st.sd < 3) m.push(`대상자 간 점수 차이가 작습니다(편차 ${st.sd}점). 조정 후에도 차이가 거의 나지 않습니다.`);
+  return m.length ? `<div class="note warn">${m.map(esc).join('<br>')}</div>` : '';
+}
+function finalBar(stage, rows) {
+  const open = rows.filter(r => r.status !== 'submitted' && r.form_code && !(stage === 2 && !r.stage1_done));
+  if (!open.length) return '';
+  const filled = open.filter(r => myKey(r) === 'filled').length, wait = rows.filter(r => stage === 2 && !r.stage1_done && r.status !== 'submitted').length;
+  return `<div class="final"><div class="t">${stage}차 평가 ${open.length}명 중 <b>${filled}명 입력 완료</b>${wait ? ` · 1차 대기 ${wait}명은 1차 제출 후 따로 최종 제출` : ''}<br>
+    모두 입력한 뒤 최종 제출하세요. 최종 제출 전까지는 언제든 수정할 수 있습니다.</div>
+    <button class="btn pri" data-act="submitAll" data-s="${stage}" ${ST.settings.is_open ? '' : 'disabled'}>${stage}차 최종 제출</button></div>`;
+}
+HANDLERS.submitAll = async a => {
+  const stage = +a.dataset.s;
+  const open = ST.my.filter(r => r.stage === stage && r.status !== 'submitted' && r.form_code && !(stage === 2 && !r.stage1_done));
+  const miss = open.filter(r => myKey(r) !== 'filled');
+  if (miss.length) {
+    const m = modal(`<h3>아직 입력하지 않은 대상자가 있습니다</h3><p>모든 역량 점수를 입력해야 최종 제출할 수 있습니다.</p>
+      <div class="tbl-wrap"><table><tbody>${miss.map(r => { const x = myScoreInfo(r); return `<tr><td><b>${esc(r.name)}</b></td><td>${esc(r.team || '')}</td><td>${x ? `입력 ${x.filled}/${x.n}` : '미작성'}</td>
+        <td><button class="btn sm pri" data-act="open" data-t="${r.target_id}" data-s="${stage}">입력하기</button></td></tr>`; }).join('')}</tbody></table></div>
+      <div class="acts"><button class="btn" data-x="c">닫기</button></div>`);
+    m.addEventListener('click', e => { if (e.target.dataset.x || e.target.dataset.act) closeModal(); });
+    return;
+  }
+  const rows = open.map(r => ({ r, x: myScoreInfo(r) })).sort((p, q) => (q.x.s100 ?? 0) - (p.x.s100 ?? 0));
+  const m = modal(`<h3>${stage}차 평가 최종 제출</h3>
+    <p>아래 ${rows.length}명의 평가를 한 번에 제출합니다. <b>제출 후에는 수정할 수 없습니다.</b></p>
+    ${(() => { const st = myStats(stage); return st ? `<p style="margin-top:-6px">내가 준 ${stage}차 점수 평균 <b>${st.avg}점</b> (조정 기준 ${ADJ()}점) · 점수 차이(편차) ${st.sd}점</p>${statsHint(st)}` : ''; })()}
+    <div class="tbl-wrap"><table><thead><tr><th>성명</th><th>팀</th><th class="num">점수(100점 환산)</th><th class="num">원점수</th></tr></thead><tbody>
+    ${rows.map(({ r, x }) => `<tr><td><b>${esc(r.name)}</b></td><td>${esc(r.team || '')}</td><td class="num"><b>${x.s100 ?? '-'}</b></td><td class="num" style="color:var(--muted)">${x.sum} / ${x.max}</td></tr>`).join('')}
+    </tbody></table></div>
+    <div class="acts"><button class="btn" data-x="n">취소</button><button class="btn pri" data-x="y">최종 제출</button></div>`, true);
+  m.addEventListener('click', async e => {
+    const x = e.target.dataset.x; if (!x) return;
+    if (x === 'n') return closeModal();
+    e.target.disabled = true;
+    try { const n = await api.submitAll(stage); closeModal(); toast(`${n}명 최종 제출했습니다`); go('my'); }
+    catch (er) { closeModal(); toast(errMsg(er), true); go('my'); }
+  });
+};
+function myScoreInfo(r) {
+  const e = ST.myEv && ST.myEv.get(r.target_id + '-' + r.stage), its = (ST.myItems || {})[r.form_code] || [];
+  if (!e || !its.length) return null;
+  const vals = its.map(i => e.scores[i.seq]).filter(v => v != null);
+  return { e, n: its.length, filled: vals.length, sum: vals.reduce((a, b) => a + b, 0), max: its.length * 10, s100: score100(its, e.scores) };
+}
+function myScoreCell(r) {
+  const x = myScoreInfo(r);
+  if (!x) return '';
+  if (x.filled < x.n) return `입력 ${x.filled}/${x.n}`;
+  return `<b>${x.s100}</b><small> / 100</small>${x.max !== 100 ? `<div style="font-size:12px;color:var(--muted)">원점수 ${x.sum}/${x.max}</div>` : ''}`;
+}
+HANDLERS.myCompare = a => {
+  const stage = +a.dataset.s;
+  const rows = ST.my.filter(r => r.stage === stage).map(r => ({ r, x: myScoreInfo(r) })).filter(o => o.x)
+    .sort((p, q) => (q.x.s100 ?? -1) - (p.x.s100 ?? -1) || p.r.name.localeCompare(q.r.name));
+  const m = modal(`<h3>${stage}차 평가 · 내가 준 점수</h3>
+    <p>${stage === 2 ? '본인이 입력한 2차 점수와 제출된 1차 점수(참고)를 표시합니다.' : '본인이 입력한 점수만 표시됩니다.'} 점수는 100점 환산 기준입니다. 100점 환산은 평가표 배점 비율을 반영한 점수로, 평가표가 달라도 비교할 수 있습니다.</p>
+    <div class="tbl-wrap"><table><thead><tr><th>성명</th><th>팀</th><th>평가표</th><th class="num">점수(100점 환산)</th><th class="num">원점수</th><th class="num">역량 평균</th>${stage === 2 ? '<th class="num">1차 100점 환산</th>' : ''}<th>상태</th></tr></thead><tbody>
+    ${rows.map(({ r, x }) => { const p1 = stage === 2 && ST.myP1.get(r.target_id); return `<tr><td><b>${esc(r.name)}</b></td><td>${esc(r.team || '')}</td><td>${esc(r.form_name || '')}</td>
+      <td class="num"><b>${x.s100 ?? '-'}</b></td><td class="num" style="color:var(--muted)">${x.filled < x.n ? `입력 ${x.filled}/${x.n}` : `${x.sum} / ${x.max}`}</td>
+      <td class="num">${x.filled ? (x.sum / x.filled).toFixed(1) : '-'}</td>${stage === 2 ? `<td class="num">${p1 ? (score100(ST.myItems[r.form_code], p1.scores) ?? '-') : '-'}</td>` : ''}<td>${badge(x.e.status)}</td></tr>`; }).join('')}
+    </tbody></table></div>
+    <div class="acts"><button class="btn" data-x="c">닫기</button></div>`, true);
+  m.addEventListener('click', e => { if (e.target.dataset.x) closeModal(); });
+};
+HANDLERS.open = async a => {
+  const tid = +a.dataset.t, stage = +a.dataset.s;
+  const t = ST.my.find(r => r.target_id === tid && r.stage === stage);
+  $('#app').innerHTML = shell('<div class="loading">불러오는 중…</div>');
+  try {
+    const [items, ev, hist, p1] = await Promise.all([api.formItems(t.form_code), api.myEvaluation(tid, stage, ST.me.emp_no), api.myHistory().catch(() => []), stage === 2 ? api.stage1For([tid]) : Promise.resolve([])]);
+    ST.ev = { t, stage, items, hist: histMap(hist), p1: p1[0] ? p1[0].scores : null, scores: { ...(ev ? ev.scores : {}) }, status: ev ? ev.status : 'none', submitted_at: ev ? ev.submitted_at : null, updated_at: ev ? ev.updated_at : null, dirty: false };
+    renderEval(); window.scrollTo(0, 0);
+  } catch (e) { toast(errMsg(e), true); go('my'); }
+};
+
+function renderEval() {
+  document.body.classList.add('has-foot');
+  const E = ST.ev, t = E.t, ro = E.status === 'submitted' || !ST.settings.is_open;
+  const groups = GRP_ORDER.concat([...new Set(E.items.map(i => i.grp))].filter(g => !GRP_ORDER.includes(g)));
+  const itemsHtml = groups.map(g => {
+    const its = E.items.filter(i => (i.grp || '') === g); if (!its.length) return '';
+    return `<div class="grp-h">${esc(g || '기타')}역량</div>` + its.map(it => {
+      const v = E.scores[it.seq];
+      return `<div class="item ${v != null ? 'done' : ''}" id="it-${it.seq}">
+        <div class="item-h"><span class="no">${it.seq}</span><b>${esc(it.name)}</b>${E.p1 ? `<span class="p1">1차 <b>${E.p1[it.seq] ?? '-'}</b></span>` : ''}<span class="cur">${v != null ? v : '-'}<small> 점</small></span></div>
+        <ul class="ind">${[it.ind1, it.ind2].filter(Boolean).map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+        <div class="scale">${Array.from({ length: 11 }, (_, n) => `<button type="button" data-act="score" data-seq="${it.seq}" data-v="${n}" class="${v === n ? 'on' : ''}" ${ro ? 'disabled' : ''}>${n}</button>`).join('')}</div>
+        <div class="scale-lg"><span>매우 미흡</span><span>보통</span><span>매우 우수</span></div>
+      </div>`;
+    }).join('');
+  }).join('');
+  const notes = [`<div class="note info adj">최종 점수는 부서별 평균이 <b>${ADJ()}점</b>이 되도록 조정됩니다. 대상자 간 차이가 드러나도록 평가해 주세요.</div>`];
+  if (E.stage === 2) notes.push(`<div class="note info">2차 평가입니다. 역량별로 1차 평가 점수가 참고로 표시됩니다${E.p1 ? ` (1차 합계 ${E.items.reduce((a, i) => a + (E.p1[i.seq] || 0), 0)}점, 100점 환산 ${score100(E.items, E.p1) ?? '-'}점)` : ''}. 1차 점수는 수정할 수 없습니다.</div>`);
+  if (E.status === 'submitted') notes.push(`<div class="note ok">제출 완료 (${esc(fmtDT(E.submitted_at))}). 수정이 필요하면 인사총무파트에 요청하세요.</div>`);
+  else if (!ST.settings.is_open) notes.push('<div class="note warn">평가 기간이 아니어서 입력할 수 없습니다.</div>');
+  else notes.push(`<div class="note warn">점수는 자동 저장됩니다. 평가할 사람을 모두 입력한 뒤 목록에서 <b>[${E.stage}차 최종 제출]</b>을 눌러 주세요.${E.status === 'draft' ? ` (마지막 저장 ${esc(fmtDT(E.updated_at))})` : ''}</div>`);
+  $('#app').innerHTML = shell(`
+    <div class="ev-head"><button class="btn sm" data-act="back">← 목록</button><h2 style="margin:0">${esc(t.name)} · ${E.stage}차 평가</h2></div>
+    <div class="card"><div class="ev-info">
+      <div><div class="l">사번</div><div class="v">${esc(t.emp_no)}</div></div>
+      <div><div class="l">부서 / 팀</div><div class="v">${esc(t.dept || '')} / ${esc(t.team || '')}</div></div>
+      <div><div class="l">직급 / 직책</div><div class="v">${esc(t.grade || '')} / ${esc(t.pos || '')}</div></div>
+      <div><div class="l">평가표</div><div class="v">${esc(t.form_name || '')}</div></div>
+      <div><div class="l">최근 3년 평가등급</div><div class="v">${histHtml(E.hist, t.emp_no)}</div></div>
+    </div></div>
+    ${notes.join('')}
+    <details class="guide" ${ro ? '' : 'open'}><summary>점수 기준</summary><table><tbody>
+      <tr><td>9~10점 탁월</td><td>기대 수준을 크게 넘어서며, 다른 사람의 모범이 된다</td></tr>
+      <tr><td>7~8점 우수</td><td>기대 수준을 넘어 안정적으로 해낸다</td></tr>
+      <tr><td>5~6점 보통</td><td>기대 수준을 충족한다</td></tr>
+      <tr><td>3~4점 미흡</td><td>기대 수준에 일부 못 미쳐 보완이 필요하다</td></tr>
+      <tr><td>0~2점 매우 미흡</td><td>기대 수준에 크게 못 미친다</td></tr>
+    </tbody></table></details>
+    ${itemsHtml}
+    <div class="footbar"><div class="footbar-in">
+      <div class="sum"><span id="evSum"></span><span class="tgt" id="evTarget"></span><span class="automsg" id="autoMsg">${ro ? '' : '점수를 누르면 자동으로 임시저장됩니다'}</span></div>
+      ${ro ? '<button class="btn" data-act="back">목록으로</button>' : `<label class="autonext"><input type="checkbox" id="autoNext" ${autoNextOn() ? 'checked' : ''}> 다음 역량 자동 이동</label><button class="btn" data-act="save">임시저장</button><button class="btn pri" data-act="saveBack">저장 후 목록</button>`}
+    </div></div>`);
+  updateSum();
+}
+function updateSum() {
+  const E = ST.ev, vals = E.items.map(i => E.scores[i.seq]).filter(v => v != null);
+  const sum = vals.reduce((a, b) => a + b, 0);
+  const s100 = score100(E.items, E.scores), cur = s100 != null ? s100 : partial100(E.items, E.scores);
+  const tg = $('#evTarget');
+  if (tg && ST.my) tg.innerHTML = targetHtml(stageAvg(E.stage, E.t.target_id, cur), `내 ${E.stage}차`) + (s100 == null && cur != null ? '<span class="tn" style="font-size:13px;color:var(--muted)">(이 대상자는 입력한 역량까지 반영)</span>' : '');
+  setTimeout(placeTopBtn, 0);
+  $('#evSum').innerHTML = `입력 <b>${vals.length}</b> / ${E.items.length} &nbsp;·&nbsp; 점수 <b>${s100 != null ? s100 : '-'}</b>점 <span style="color:var(--muted)">/ 100점 환산</span> &nbsp;<span style="color:var(--muted);font-size:13px">(원점수 ${sum}/${E.items.length * 10})</span>`;
+}
+// 다음 역량 자동 이동 설정 (기본 꺼짐, 켜면 브라우저에 기억)
+function autoNextOn() { try { return localStorage.getItem('autoNext') === 'on'; } catch (e) { return false; } }
+document.addEventListener('change', e => {
+  if (e.target.id === 'autoNext') { try { localStorage.setItem('autoNext', e.target.checked ? 'on' : 'off'); } catch (er) {} }
+});
+function goNextItem(box) {
+  const cb = $('#autoNext'); if (cb && !cb.checked) return;
+  const all = $$('.item'), i = all.indexOf(box);
+  // 다음 미입력 역량 우선, 없으면 바로 다음 역량
+  const next = all.slice(i + 1).find(x => !x.classList.contains('done')) || all[i + 1];
+  if (!next) return;
+  $$('.item.next').forEach(x => x.classList.remove('next'));
+  setTimeout(() => { next.scrollIntoView({ behavior: 'smooth', block: 'center' }); next.classList.add('next'); setTimeout(() => next.classList.remove('next'), 1200); }, 250);
+}
+// 맨 위로 버튼
+const toTopBtn = document.getElementById('toTop');
+window.addEventListener('scroll', () => toTopBtn.classList.toggle('show', window.scrollY > 400), { passive: true });
+toTopBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+// 하단 고정 줄이 있으면 그 위에 버튼 배치
+function placeTopBtn() { const f = document.querySelector('.footbar'); toTopBtn.style.bottom = f ? (f.offsetHeight + 14) + 'px' : ''; }
+window.addEventListener('resize', placeTopBtn);
+function setAutoMsg(t, cls) { const el = $('#autoMsg'); if (el) { el.textContent = t; el.className = 'automsg' + (cls ? ' ' + cls : ''); } }
+function scheduleAutosave() {
+  const E = ST.ev; if (!E) return;
+  clearTimeout(E.timer); setAutoMsg('저장 대기 중…');
+  E.timer = setTimeout(() => doAutosave(), 1500);
+}
+// 입력 내용을 임시저장. 성공하면 true
+async function doAutosave() {
+  const E = ST.ev; if (!E) return true;
+  clearTimeout(E.timer);
+  if (E.saving) await E.saving;
+  if (!E.dirty) return true;
+  const snap = JSON.stringify(E.scores);
+  let ok = false;
+  setAutoMsg('저장 중…');
+  E.saving = (async () => {
+    try {
+      await api.saveEvaluation(E.t.target_id, E.stage, cleanScores(E.items, E.scores, false), false);
+      if (JSON.stringify(E.scores) === snap) E.dirty = false;
+      E.status = 'draft'; E.updated_at = nowISO(); ok = true;
+      setAutoMsg('자동 저장됨 ' + new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }), 'ok');
+    } catch (e) { setAutoMsg('자동 저장 실패: ' + errMsg(e) + ' — [임시저장]을 눌러 다시 시도하세요', 'err'); }
+  })();
+  await E.saving; E.saving = null;
+  if (ok && E.dirty) return doAutosave();
+  return ok && !E.dirty;
+}
+HANDLERS.score = a => {
+  const E = ST.ev, seq = a.dataset.seq, v = +a.dataset.v;
+  E.scores[seq] = v; E.dirty = true; scheduleAutosave();
+  const box = $('#it-' + seq);
+  $$('.scale button', box).forEach(b => b.classList.toggle('on', +b.dataset.v === v));
+  box.classList.add('done');
+  $('.cur', box).innerHTML = `${v}<small> 점</small>`;
+  updateSum();
+  goNextItem(box);
+};
+HANDLERS.saveBack = async a => {
+  const E = ST.ev; a.disabled = true;
+  E.dirty = true;
+  if (!(await doAutosave())) { a.disabled = false; return toast('저장하지 못했습니다. 잠시 후 다시 시도하세요', true); }
+  const miss = E.items.filter(i => E.scores[i.seq] == null).length;
+  toast(miss ? `저장했습니다 (미입력 역량 ${miss}개)` : '저장했습니다');
+  ST.ev = null; go('my');
+};
+HANDLERS.back = async () => {
+  if (ST.ev && ST.ev.dirty) await doAutosave();
+  if (ST.ev && ST.ev.dirty && !(await confirmBox('저장하지 않은 점수', '저장하지 않은 점수가 있습니다. 목록으로 가면 입력한 내용이 사라집니다.', '나가기', true))) return;
+  ST.ev = null; go('my');
+};
+HANDLERS.save = async a => {
+  const E = ST.ev; a.disabled = true;
+  E.dirty = true;
+  if (await doAutosave()) toast('임시저장했습니다'); else toast('저장하지 못했습니다. 잠시 후 다시 시도하세요', true);
+  a.disabled = false;
+};
+
+/* =============================================================
+   관리자 공통
+   ============================================================= */
+function admIdx() {
+  const D = ST.adm;
+  const acc = new Map(D.accounts.map(a => [a.emp_no, a]));
+  const forms = new Map(D.forms.map(f => [f.code, f]));
+  const ev = new Map(D.evaluations.map(e => [e.target_id + '-' + e.stage, e]));
+  const items = {}; D.items.forEach(i => (items[i.form_code] = items[i.form_code] || []).push(i));
+  Object.values(items).forEach(l => l.sort((a, b) => a.seq - b.seq));
+  return { acc, forms, ev, items };
+}
+const accName = (I, emp) => emp ? ((I.acc.get(emp) || {}).name || emp) : '';
+function stageKey(I, t, stage) {
+  if (!t.form_code) return 'noform';
+  const fk = e => e.status === 'draft' && (I.items[t.form_code] || []).length && Object.keys(e.scores || {}).length === I.items[t.form_code].length ? 'filled' : e.status;
+  if (stage === 1) { if (!t.e1_emp) return 'noev'; const e = I.ev.get(t.id + '-1'); return e ? fk(e) : 'none'; }
+  if (!t.e2_emp) return 'end';
+  const e2 = I.ev.get(t.id + '-2'); if (e2) return fk(e2);
+  const e1 = I.ev.get(t.id + '-1'); return e1 && e1.status === 'submitted' ? 'none' : 'wait';
+}
+const sortT = l => l.slice().sort((a, b) => (a.dept || '').localeCompare(b.dept || '') || (a.team || '').localeCompare(b.team || '') || (a.emp_no || '').localeCompare(b.emp_no || ''));
+const opt = (v, l, sel) => `<option value="${esc(v)}" ${sel ? 'selected' : ''}>${esc(l)}</option>`;
+function filterBar(id, extra = '') {
+  const F = ST.f[id] = ST.f[id] || { q: '', dept: '', st: '' };
+  const depts = [...new Set(ST.adm.targets.map(t => t.dept).filter(Boolean))].sort();
+  return `<div class="toolbar">
+    <input class="inp" placeholder="이름·사번·평가자 검색" data-flt="${id}" data-k="q" value="${esc(F.q)}">
+    <select data-flt="${id}" data-k="dept">${opt('', '전체 부서', !F.dept)}${depts.map(d => opt(d, d, F.dept === d)).join('')}</select>
+    ${extra}<span class="sp"></span></div>`;
+}
+document.addEventListener('input', e => {
+  const el = e.target.closest('[data-flt]'); if (!el) return;
+  ST.f[el.dataset.flt][el.dataset.k] = el.value;
+  const pos = el.selectionStart;
+  renderAdmin();
+  const n = $(`[data-flt="${el.dataset.flt}"][data-k="${el.dataset.k}"]`);
+  if (n) { n.focus(); if (n.setSelectionRange && pos != null) try { n.setSelectionRange(pos, pos); } catch (_) {} }
+});
+function matchQ(I, t, q) {
+  if (!q) return true; q = q.toLowerCase();
+  return [t.name, t.emp_no, t.team, accName(I, t.e1_emp), accName(I, t.e2_emp)].some(x => String(x || '').toLowerCase().includes(q));
+}
+
+/* ---------- 진행 현황 ---------- */
+function renderProgress() {
+  const D = ST.adm, I = admIdx(), HM = histMap(D.history);
+  const inc = D.targets.filter(t => t.included);
+  const s1 = inc.filter(t => stageKey(I, t, 1) === 'submitted').length;
+  const has2 = inc.filter(t => t.e2_emp);
+  const s2 = has2.filter(t => stageKey(I, t, 2) === 'submitted').length;
+  const allDone = inc.filter(t => stageKey(I, t, 1) === 'submitted' && (!t.e2_emp || stageKey(I, t, 2) === 'submitted')).length;
+  const noForm = inc.filter(t => !t.form_code).length, noEv = inc.filter(t => !t.e1_emp).length;
+  const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+  const F = ST.f.prog = ST.f.prog || { q: '', dept: '', st: '' };
+  const stSel = `<select data-flt="prog" data-k="st">${opt('', '전체 상태', !F.st)}${opt('todo', '미완료만', F.st === 'todo')}${opt('done', '완료만', F.st === 'done')}${opt('issue', '지정 필요', F.st === 'issue')}</select>`;
+  const rows = sortT(inc).filter(t => matchQ(I, t, F.q) && (!F.dept || t.dept === F.dept)).filter(t => {
+    const k1 = stageKey(I, t, 1), k2 = stageKey(I, t, 2);
+    const done = k1 === 'submitted' && (k2 === 'end' || k2 === 'submitted');
+    if (F.st === 'todo') return !done; if (F.st === 'done') return done;
+    if (F.st === 'issue') return k1 === 'noform' || k1 === 'noev'; return true;
+  });
+  const evr = (t, st) => {
+    const k = stageKey(I, t, st), e = I.ev.get(t.id + '-' + st);
+    return `<td>${esc(accName(I, st === 1 ? t.e1_emp : t.e2_emp)) || '<span style="color:var(--muted)">-</span>'}</td><td>${badge(k)}${e && e.status === 'submitted' ? `<div style="font-size:13px;color:var(--muted)">${esc(fmtDT(e.submitted_at))}</div>` : ''}</td>`;
+  };
+  const tbl = rows.length ? `<div class="tbl-wrap"><table class="tbl-fit"><thead><tr><th>사번</th><th>성명</th><th>부서 / 팀</th><th>직급</th><th>최근 3년</th><th>평가표</th><th>1차 평가자</th><th>1차</th><th>2차 평가자</th><th>2차</th><th class="c">작업</th></tr></thead><tbody>
+    ${rows.map(t => {
+      const e1 = I.ev.get(t.id + '-1'), e2 = I.ev.get(t.id + '-2');
+      return `<tr><td>${esc(t.emp_no)}</td><td><b>${esc(t.name)}</b></td><td class="wrap">${esc(t.dept || '')}<small>${esc(t.team || '')}</small></td><td>${esc(t.grade || '')}</td><td>${histHtml(HM, t.emp_no)}</td>
+      <td class="wrap">${t.form_code ? esc(t.form_code) + '<small>' + esc((I.forms.get(t.form_code) || {}).name || '') + '</small>' : badge('noform')}</td>
+      ${evr(t, 1)}${evr(t, 2)}
+      <td class="c"><button class="btn sm" data-act="viewScores" data-id="${t.id}" ${e1 || e2 ? '' : 'disabled'}>점수</button>
+        ${e1 && e1.status === 'submitted' ? `<button class="btn sm danger" data-act="reopen" data-id="${t.id}" data-s="1">1차 반려</button>` : ''}
+        ${e2 && e2.status === 'submitted' ? `<button class="btn sm danger" data-act="reopen" data-id="${t.id}" data-s="2">2차 반려</button>` : ''}</td></tr>`;
+    }).join('')}</tbody></table></div>` : '<div class="card empty">해당하는 대상자가 없습니다.</div>';
+
+  // 평가자별
+  const byEv = new Map();
+  inc.forEach(t => {
+    [[1, t.e1_emp], [2, t.e2_emp]].forEach(([st, emp]) => {
+      if (!emp || !t.form_code) return;
+      const o = byEv.get(emp) || { emp, a1: 0, d1: 0, a2: 0, d2: 0, w2: 0 };
+      const k = stageKey(I, t, st);
+      if (st === 1) { o.a1++; if (k === 'submitted') o.d1++; } else { o.a2++; if (k === 'submitted') o.d2++; if (k === 'wait') o.w2++; }
+      byEv.set(emp, o);
+    });
+  });
+  const evRows = [...byEv.values()].map(o => ({ ...o, name: accName(I, o.emp), left: (o.a1 - o.d1) + (o.a2 - o.d2 - o.w2), acc: I.acc.get(o.emp) || {} }))
+    .sort((a, b) => b.left - a.left || a.name.localeCompare(b.name));
+  const evTbl = `<div class="tbl-wrap"><table><thead><tr><th>평가자</th><th class="num">1차 제출/배정</th><th class="num">2차 제출/배정</th><th class="num">2차 중 1차 대기</th><th class="num">지금 입력 가능한 미제출</th><th>첫 로그인</th></tr></thead><tbody>
+    ${evRows.map(o => `<tr><td><b>${esc(o.name)}</b> <span style="color:var(--muted)">${esc(o.emp)}</span></td><td class="num">${o.d1} / ${o.a1}</td><td class="num">${o.a2 ? o.d2 + ' / ' + o.a2 : '-'}</td><td class="num">${o.w2 || '-'}</td>
+      <td class="num">${o.left ? `<b style="color:var(--amber)">${o.left}</b>` : '<span style="color:var(--green)">0</span>'}</td><td>${o.acc.pw_changed ? '<span class="badge b-green">완료</span>' : '<span class="badge b-gray">안 함</span>'}</td></tr>`).join('')}
+    </tbody></table></div>`;
+
+  $('#app').innerHTML = shell(`
+    <div class="toolbar" style="margin-bottom:4px"><h2 style="margin:0">진행 현황</h2><span class="sp"></span>
+      <button class="btn" data-act="reload">새로고침</button><button class="btn pri" data-act="export">결과 엑셀 다운로드</button></div>
+    <p class="desc">${esc(D.settings.cycle)}년 평가 · 대상자 ${inc.length}명 (제외 ${D.targets.length - inc.length}명)</p>
+    <div class="kpis">
+      <div class="kpi"><div class="l">1차 제출</div><div class="v">${s1} <small>/ ${inc.length}</small></div><div class="bar"><i style="width:${pct(s1, inc.length)}%"></i></div></div>
+      <div class="kpi"><div class="l">2차 제출</div><div class="v">${s2} <small>/ ${has2.length}</small></div><div class="bar"><i style="width:${pct(s2, has2.length)}%"></i></div></div>
+      <div class="kpi"><div class="l">평가 완료(1·2차 모두)</div><div class="v">${allDone} <small>/ ${inc.length}</small></div><div class="bar"><i style="width:${pct(allDone, inc.length)}%"></i></div></div>
+      <div class="kpi"><div class="l">지정 필요</div><div class="v" style="color:${noForm + noEv ? 'var(--red)' : 'inherit'}">${noForm + noEv}</div><div style="font-size:14px;color:var(--ink2)">평가표 ${noForm} · 1차 평가자 ${noEv}</div></div>
+    </div>
+    <div class="card"><h3>대상자별</h3>${filterBar('prog', stSel)}${tbl}</div>
+    <div class="card"><h3>평가자별</h3>${evRows.length ? evTbl : '<div class="empty">배정된 평가자가 없습니다.</div>'}</div>`);
+}
+HANDLERS.reload = () => go(ST.view);
+HANDLERS.reopen = async a => {
+  const id = +a.dataset.id, st = +a.dataset.s, t = ST.adm.targets.find(x => x.id === id);
+  if (!(await confirmBox(`${st}차 평가 반려`, `${t.name} 님의 ${st}차 평가를 반려합니다.\n입력된 점수는 남아 있고, 평가자가 수정 후 다시 제출해야 합니다.`, '반려', true))) return;
+  try { await api.adm.reopen(id, st); toast('반려했습니다'); go('progress'); } catch (e) { toast(errMsg(e), true); }
+};
+HANDLERS.viewScores = a => {
+  const I = admIdx(), t = ST.adm.targets.find(x => x.id === +a.dataset.id);
+  const its = I.items[t.form_code] || [], e1 = I.ev.get(t.id + '-1'), e2 = I.ev.get(t.id + '-2');
+  const v = (e, s) => e && e.scores[s] != null ? e.scores[s] : '-';
+  const sum = e => e ? its.reduce((s, i) => s + (e.scores[i.seq] || 0), 0) : '-';
+  const stx = e => e ? STATUS[e.status][0] : '없음';
+  const m = modal(`<h3>${esc(t.name)} · ${esc((I.forms.get(t.form_code) || {}).name || '')}</h3>
+    <p style="margin-bottom:6px">최근 3년 ${histHtml(histMap(ST.adm.history), t.emp_no)}</p>
+    <p>1차 ${esc(accName(I, t.e1_emp))} (${stx(e1)}) · 2차 ${esc(accName(I, t.e2_emp) || '1차 종결')}${t.e2_emp ? ` (${stx(e2)})` : ''}</p>
+    <div class="tbl-wrap"><table><thead><tr><th>No</th><th>구분</th><th>역량</th><th class="num">1차</th><th class="num">2차</th></tr></thead><tbody>
+    ${its.map(i => `<tr><td>${i.seq}</td><td>${esc(i.grp || '')}</td><td>${esc(i.name)}</td><td class="num">${v(e1, i.seq)}</td><td class="num">${t.e2_emp ? v(e2, i.seq) : ''}</td></tr>`).join('')}
+    <tr><td></td><td></td><td>원점수 합계 (만점 ${its.length * 10})</td><td class="num">${sum(e1)}</td><td class="num">${t.e2_emp ? sum(e2) : ''}</td></tr>
+    <tr><td></td><td></td><td><b>100점 환산</b></td><td class="num"><b>${e1 ? (score100(its, e1.scores) ?? '-') : '-'}</b></td><td class="num"><b>${t.e2_emp && e2 ? (score100(its, e2.scores) ?? '-') : ''}</b></td></tr></tbody></table></div>
+    <div class="acts"><button class="btn" data-x="c">닫기</button></div>`, true);
+  m.addEventListener('click', e => { if (e.target.dataset.x) closeModal(); });
+};
+
+/* ---------- 대상자·평가표 지정 ---------- */
+function renderTargets() {
+  const D = ST.adm, I = admIdx();
+  const F = ST.f.tg = ST.f.tg || { q: '', dept: '', st: '' };
+  const stSel = `<select data-flt="tg" data-k="st">${opt('', '전체', !F.st)}${opt('issue', '지정 필요만', F.st === 'issue')}${opt('in', '평가 대상만', F.st === 'in')}${opt('out', '제외자만', F.st === 'out')}</select>`;
+  const rows = sortT(D.targets).filter(t => matchQ(I, t, F.q) && (!F.dept || t.dept === F.dept))
+    .filter(t => F.st === 'issue' ? (t.included && (!t.form_code || !t.e1_emp)) : F.st === 'in' ? t.included : F.st === 'out' ? !t.included : true);
+  const accs = D.accounts.slice().sort((a, b) => a.name.localeCompare(b.name));
+  const accOpts = (sel, blank) => opt('', blank, !sel) + accs.map(a => opt(a.emp_no, `${a.name} (${a.emp_no})`, a.emp_no === sel)).join('');
+  const formOpts = sel => opt('', '— 선택 —', !sel) + D.forms.map(f => opt(f.code, `${f.code} ${f.name}`, f.code === sel)).join('');
+  const tbl = rows.length ? `<div class="tbl-wrap"><table class="tbl-fit"><thead><tr><th>사번</th><th>성명</th><th>부서 / 팀</th><th>직급 / 직책</th><th class="c-form">평가표</th><th class="c-ev">1차 평가자</th><th class="c-ev">2차 평가자</th><th class="c">대상</th><th>진행</th><th class="c">저장</th></tr></thead><tbody>
+    ${rows.map(t => {
+      const e1 = I.ev.get(t.id + '-1'), e2 = I.ev.get(t.id + '-2');
+      const prog = [e1 ? '1차 ' + STATUS[e1.status][0] : '', e2 ? '2차 ' + STATUS[e2.status][0] : ''].filter(Boolean).join(' · ');
+      return `<tr data-id="${t.id}" class="${t.included ? '' : 'off'}">
+        <td>${esc(t.emp_no)}</td><td><b>${esc(t.name)}</b></td><td class="wrap">${esc(t.dept || '')}<small>${esc(t.team || '')}</small></td><td class="wrap">${esc(t.grade || '')}<small>${esc(t.pos || '')}</small></td>
+        <td><select data-tf="form_code">${formOpts(t.form_code)}</select></td>
+        <td><select data-tf="e1_emp">${accOpts(t.e1_emp, '— 선택 —')}</select></td>
+        <td><select data-tf="e2_emp">${accOpts(t.e2_emp, '없음 (1차 종결)')}</select></td>
+        <td class="c"><input type="checkbox" data-tf="included" ${t.included ? 'checked' : ''}></td>
+        <td class="wrap" style="font-size:14px;color:var(--ink2)">${esc(prog) || '-'}</td>
+        <td class="c"><button class="btn sm pri" data-act="saveTarget" data-id="${t.id}" disabled>저장</button></td></tr>`;
+    }).join('')}</tbody></table></div>` : '<div class="card empty">해당하는 대상자가 없습니다.</div>';
+  $('#app').innerHTML = shell(`
+    <div class="toolbar" style="margin-bottom:4px"><h2 style="margin:0">대상자·평가표 지정</h2><span class="sp"></span><button class="btn pri" data-act="addTarget">대상자 추가</button></div>
+    <p class="desc">사람마다 평가표와 1차·2차 평가자를 지정합니다. 2차 평가자를 비우면 1차에서 종결됩니다.<br>
+      평가표를 바꾸면 그 사람의 1·2차 평가가, 평가자를 바꾸면 그 차수의 평가가 초기화됩니다(저장 전 확인).</p>
+    ${filterBar('tg', stSel)}${tbl}`);
+  $$('tr[data-id] [data-tf]').forEach(el => el.addEventListener('change', () => {
+    const tr = el.closest('tr'); tr.classList.add('dirty'); $('[data-act="saveTarget"]', tr).disabled = false;
+  }));
+}
+HANDLERS.saveTarget = async a => {
+  const tr = a.closest('tr'), id = +a.dataset.id, t = ST.adm.targets.find(x => x.id === id);
+  const p = { form_code: $('[data-tf="form_code"]', tr).value, e1_emp: $('[data-tf="e1_emp"]', tr).value, e2_emp: $('[data-tf="e2_emp"]', tr).value, included: $('[data-tf="included"]', tr).checked, note: t.note };
+  if (p.included && p.e1_emp && p.e1_emp === p.e2_emp) return toast('1차와 2차 평가자가 같습니다', true);
+  if (p.e1_emp && p.e1_emp === t.emp_no || p.e2_emp && p.e2_emp === t.emp_no) return toast('본인을 평가자로 지정할 수 없습니다', true);
+  a.disabled = true;
+  try { await api.adm.updateTarget(id, p, false); }
+  catch (e) {
+    if (!/HAS_EVAL/.test(errMsg(e))) { a.disabled = false; return toast(errMsg(e), true); }
+    const ok = await confirmBox('기존 평가 초기화', `${t.name} 님은 이미 입력된 평가가 있습니다.\n변경하면 해당 차수의 평가 내용(제출분 포함)이 삭제됩니다. 진행할까요?`, '삭제하고 변경', true);
+    if (!ok) { a.disabled = false; return; }
+    try { await api.adm.updateTarget(id, p, true); } catch (e2) { a.disabled = false; return toast(errMsg(e2), true); }
+  }
+  toast('저장했습니다'); go('targets');
+};
+HANDLERS.addTarget = () => {
+  const D = ST.adm;
+  const accs = D.accounts.slice().sort((a, b) => a.name.localeCompare(b.name));
+  const m = modal(`<h3>대상자 추가</h3><form id="tgForm"><div class="grid2">
+    <label class="field"><span>사번 *</span><input name="emp_no" required></label><label class="field"><span>성명 *</span><input name="name" required></label>
+    <label class="field"><span>부서</span><input name="dept"></label><label class="field"><span>팀</span><input name="team"></label>
+    <label class="field"><span>직급</span><input name="grade"></label><label class="field"><span>직책</span><input name="pos"></label></div>
+    <label class="field"><span>평가표</span><select name="form_code">${opt('', '— 나중에 지정 —', true)}${D.forms.map(f => opt(f.code, f.code + ' ' + f.name)).join('')}</select></label>
+    <div class="grid2"><label class="field"><span>1차 평가자</span><select name="e1_emp">${opt('', '— 나중에 지정 —', true)}${accs.map(a => opt(a.emp_no, `${a.name} (${a.emp_no})`)).join('')}</select></label>
+    <label class="field"><span>2차 평가자</span><select name="e2_emp">${opt('', '없음 (1차 종결)', true)}${accs.map(a => opt(a.emp_no, `${a.name} (${a.emp_no})`)).join('')}</select></label></div>
+    <div class="err"></div><div class="acts"><button type="button" class="btn" data-x="c">취소</button><button class="btn pri">추가</button></div></form>`);
+  m.addEventListener('click', e => { if (e.target.dataset.x) closeModal(); });
+  $('#tgForm').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.target;
+    const t = { cycle: ST.settings.cycle, emp_no: padEmp(f.emp_no.value), name: f.name.value.trim(), dept: f.dept.value.trim() || null, team: f.team.value.trim() || null, grade: f.grade.value.trim() || null, pos: f.pos.value.trim() || null, form_code: f.form_code.value || null, e1_emp: f.e1_emp.value || null, e2_emp: f.e2_emp.value || null, included: true, note: null };
+    if (t.e1_emp && t.e1_emp === t.e2_emp) { f.querySelector('.err').textContent = '1차와 2차 평가자가 같습니다'; return; }
+    try { await api.adm.addTarget(t); closeModal(); toast('추가했습니다'); go('targets'); }
+    catch (x) { f.querySelector('.err').textContent = /duplicate|unique/i.test(errMsg(x)) ? '이미 등록된 사번입니다' : errMsg(x); }
+  });
+};
+
+/* ---------- 평가표 ---------- */
+function renderForms() {
+  const D = ST.adm, I = admIdx();
+  const cnt = {}; D.targets.filter(t => t.included).forEach(t => { if (t.form_code) cnt[t.form_code] = (cnt[t.form_code] || 0) + 1; });
+  const open = ST.f.formOpen;
+  $('#app').innerHTML = shell(`<h2>평가표</h2><p class="desc">평가표 ${D.forms.length}종. 문항 수정은 기초데이터 엑셀의 '평가표유형'·'문항' 시트를 고친 뒤 [설정·업로드]에서 올리면 반영됩니다.</p>
+    <div class="tbl-wrap"><table><thead><tr><th>코드</th><th>평가표명</th><th>구분</th><th class="num">역량 수</th><th class="num">지정 인원</th><th></th></tr></thead><tbody>
+    ${D.forms.map(f => {
+      const its = I.items[f.code] || [];
+      return `<tr><td>${esc(f.code)}</td><td><b>${esc(f.name)}</b></td><td>${esc(f.kind || '')}</td><td class="num">${its.length}</td><td class="num">${cnt[f.code] || 0}</td>
+        <td><button class="btn sm" data-act="toggleForm" data-c="${esc(f.code)}">${open === f.code ? '닫기' : '문항 보기'}</button></td></tr>
+        ${open === f.code ? `<tr class="form-items"><td colspan="6"><table><thead><tr><th>No</th><th>구분</th><th>역량</th><th class="num">배점(참고)</th><th>행동지표</th></tr></thead><tbody>
+          ${its.map(i => `<tr><td>${i.seq}</td><td>${esc(i.grp || '')}</td><td><b>${esc(i.name)}</b></td><td class="num">${i.weight_ref ?? '-'}</td><td>${esc(i.ind1 || '')}<br>${esc(i.ind2 || '')}</td></tr>`).join('')}
+          </tbody></table></td></tr>` : ''}`;
+    }).join('')}</tbody></table></div>`);
+}
+HANDLERS.toggleForm = a => { ST.f.formOpen = ST.f.formOpen === a.dataset.c ? null : a.dataset.c; renderForms(); };
+
+/* ---------- 평가자 계정 ---------- */
+function renderAccounts() {
+  const D = ST.adm;
+  const n1 = {}, n2 = {}; D.targets.filter(t => t.included).forEach(t => { if (t.e1_emp) n1[t.e1_emp] = (n1[t.e1_emp] || 0) + 1; if (t.e2_emp) n2[t.e2_emp] = (n2[t.e2_emp] || 0) + 1; });
+  const accs = D.accounts.slice().sort((a, b) => (a.role === 'admin' ? 0 : 1) - (b.role === 'admin' ? 0 : 1) || a.name.localeCompare(b.name));
+  $('#app').innerHTML = shell(`
+    <div class="toolbar" style="margin-bottom:4px"><h2 style="margin:0">평가자 계정</h2><span class="sp"></span><button class="btn pri" data-act="editAcc">계정 추가</button></div>
+    <p class="desc">여기 등록된 회사메일로만 로그인할 수 있습니다.</p>
+    ${DEMO ? '' : `<div class="note info">로그인용 사용자는 Supabase에서 따로 만들어야 합니다: <b>Authentication → Users → Add user → Create new user</b> 에서 같은 회사메일과 임시 비밀번호를 넣고 <b>Auto Confirm User</b>를 체크하세요.</div>`}
+    <div class="tbl-wrap"><table><thead><tr><th>사번</th><th>성명</th><th>회사메일</th><th>권한</th><th class="num">1차 배정</th><th class="num">2차 배정</th><th>첫 로그인</th><th></th></tr></thead><tbody>
+    ${accs.map(a => `<tr><td>${esc(a.emp_no)}</td><td><b>${esc(a.name)}</b></td><td>${a.email ? esc(a.email) : '<span class="badge b-red">미입력</span>'}</td>
+      <td>${a.role === 'admin' ? '<span class="badge b-amber">관리자</span>' : '평가자'}</td><td class="num">${n1[a.emp_no] || 0}</td><td class="num">${n2[a.emp_no] || 0}</td>
+      <td>${a.pw_changed ? '<span class="badge b-green">완료</span>' : '<span class="badge b-gray">안 함</span>'}</td>
+      <td><button class="btn sm" data-act="editAcc" data-e="${esc(a.emp_no)}">수정</button></td></tr>`).join('')}
+    </tbody></table></div>`);
+}
+HANDLERS.editAcc = a => {
+  const old = a.dataset.e ? ST.adm.accounts.find(x => x.emp_no === a.dataset.e) : null;
+  const m = modal(`<h3>${old ? '계정 수정' : '계정 추가'}</h3><form id="accForm">
+    <div class="grid2"><label class="field"><span>사번 *</span><input name="emp_no" required value="${esc(old ? old.emp_no : '')}"></label>
+    <label class="field"><span>성명 *</span><input name="name" required value="${esc(old ? old.name : '')}"></label></div>
+    <label class="field"><span>회사메일</span><input type="email" name="email" value="${esc(old ? old.email || '' : '')}"></label>
+    <label class="field"><span>권한</span><select name="role">${opt('evaluator', '평가자', !old || old.role !== 'admin')}${opt('admin', '관리자', old && old.role === 'admin')}</select></label>
+    <div class="err"></div><div class="acts"><button type="button" class="btn" data-x="c">취소</button><button class="btn pri">저장</button></div></form>`);
+  m.addEventListener('click', e => { if (e.target.dataset.x) closeModal(); });
+  $('#accForm').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.target;
+    const rec = { emp_no: padEmp(f.emp_no.value), name: f.name.value.trim(), email: f.email.value.trim() || null, role: f.role.value };
+    if (old && old.emp_no === ST.me.emp_no && rec.role !== 'admin') { f.querySelector('.err').textContent = '본인의 관리자 권한은 해제할 수 없습니다'; return; }
+    try { await api.adm.saveAccount(rec, old ? old.emp_no : null); closeModal(); toast('저장했습니다'); go('accounts'); }
+    catch (x) { f.querySelector('.err').textContent = /duplicate|unique/i.test(errMsg(x)) ? '이미 사용 중인 사번 또는 이메일입니다' : errMsg(x); }
+  });
+};
+
+/* ---------- 설정·업로드 ---------- */
+function renderSettings() {
+  const s = ST.adm.settings;
+  $('#app').innerHTML = shell(`<h2>설정·업로드</h2><p class="desc">평가 기간 관리, 기초데이터 엑셀 업로드, 결과 다운로드</p>
+    <div class="card"><h3>평가 설정</h3>
+      <div class="toolbar"><label class="field" style="margin:0"><span>평가 연도</span><input class="inp" type="number" id="setCycle" value="${esc(s.cycle)}" style="width:120px"></label>
+      <label class="field" style="margin:0"><span>조정 기준 평균</span><input class="inp" type="number" id="setAdj" value="${esc(s.adj_target ?? 80)}" style="width:120px"></label>
+      <label class="switch" style="margin-top:18px"><input type="checkbox" id="setOpen" ${s.is_open ? 'checked' : ''}> 평가 기간 열림 (끄면 평가자가 입력·제출할 수 없음)</label>
+      <span class="sp"></span><button class="btn pri" data-act="saveSettings" style="margin-top:18px">저장</button></div></div>
+    <div class="card"><h3>기초데이터 업로드</h3>
+      <p class="desc" style="margin-bottom:10px">'2026_인사평가_웹_기초데이터.xlsx' 양식을 올립니다. 시트: 평가표유형 · 문항 · 평가자계정 · 대상자명단 · 평가이력<br>
+      새 사번은 추가하고, 이미 있는 사번은 인적사항만 갱신합니다(평가표·평가자는 선택 시에만 덮어씀).<br>이미 평가가 입력된 사람의 평가표·평가자 변경은 건너뜁니다 — 화면에서 개별 변경하세요.</p>
+      <input type="file" id="uplFile" accept=".xlsx,.xls">
+      <div id="uplPrev"></div></div>
+    <div class="card"><h3>결과 다운로드</h3><p class="desc" style="margin-bottom:10px">요약, 점수 상세(세로형), 평가표별 시트로 내려받습니다. 가중치·조정 작업은 이 파일에서 진행하세요.</p>
+      <button class="btn pri" data-act="export">결과 엑셀 다운로드</button></div>`);
+  $('#uplFile').addEventListener('change', onUploadFile);
+}
+HANDLERS.saveSettings = async () => {
+  const cycle = parseInt($('#setCycle').value, 10), is_open = $('#setOpen').checked, adj_target = parseFloat($('#setAdj').value);
+  if (!cycle) return toast('연도를 입력하세요', true);
+  if (!(adj_target > 0 && adj_target <= 100)) return toast('조정 기준 평균은 1~100 사이로 입력하세요', true);
+  try { await api.adm.saveSettings({ cycle, is_open, adj_target }); ST.settings = { ...ST.settings, cycle, is_open, adj_target }; toast('저장했습니다'); go('settings'); }
+  catch (e) { toast(errMsg(e), true); }
+};
+
+function sheetRows(wb, name, keyCol) {
+  const ws = wb.Sheets[name]; if (!ws) return null;
+  const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
+  const hi = aoa.findIndex(r => r.some(c => String(c).trim() === keyCol));
+  if (hi < 0) return null;
+  const head = aoa[hi].map(c => String(c).trim());
+  return aoa.slice(hi + 1).filter(r => r.some(c => String(c).trim() !== '')).map(r => {
+    const o = {}; head.forEach((h, i) => { if (h) o[h] = String(r[i] ?? '').trim(); }); return o;
+  });
+}
+const col = (o, ...names) => { for (const n of names) { const k = Object.keys(o).find(k => k === n || k.startsWith(n)); if (k && o[k] !== '') return o[k]; } return ''; };
+
+function parseBase(wb) {
+  const warn = [], out = { forms: [], items: [], accounts: [], targets: [], history: [] };
+  const fr = sheetRows(wb, '평가표유형', '평가표코드');
+  if (fr) fr.forEach(r => { const code = col(r, '평가표코드'); if (code) out.forms.push({ code, name: col(r, '평가표명') || code, kind: col(r, '구분') || null }); });
+  const ir = sheetRows(wb, '문항', '평가표코드');
+  if (ir) ir.forEach(r => {
+    const form_code = col(r, '평가표코드'), seq = parseInt(col(r, '순서'), 10), name = col(r, '역량명');
+    if (!form_code || !seq || !name) return;
+    const w = parseFloat(col(r, '배점'));
+    out.items.push({ form_code, seq, grp: col(r, '역량구분') || null, name, weight_ref: isNaN(w) ? null : w, ind1: col(r, '행동지표 1', '행동지표1') || null, ind2: col(r, '행동지표 2', '행동지표2') || null });
+  });
+  const formCodes = new Set(out.forms.map(f => f.code).concat(ST.adm.forms.map(f => f.code)));
+  const itemForms = new Set(out.items.map(i => i.form_code));
+  out.items = out.items.filter(i => { if (!out.forms.some(f => f.code === i.form_code) && !ST.adm.forms.some(f => f.code === i.form_code)) { warn.push(`문항: 평가표 ${i.form_code} 없음 → 제외`); return false; } return true; });
+  out.forms.forEach(f => { if (!itemForms.has(f.code)) warn.push(`평가표 ${f.code}: 문항이 없습니다`); });
+  const ar = sheetRows(wb, '평가자계정', '사번');
+  if (ar) ar.forEach(r => {
+    const emp_no = padEmp(col(r, '사번')), name = col(r, '성명'); if (!emp_no || !name) return;
+    const email = col(r, '회사메일', '이메일') || null;
+    if (!email && !ST.adm.accounts.some(x => x.emp_no === emp_no && x.email)) warn.push(`계정 ${name}(${emp_no}): 회사메일 미입력 → 로그인 불가`);
+    out.accounts.push({ emp_no, name, email, role: col(r, '권한') === '관리자' ? 'admin' : 'evaluator' });
+  });
+  const emails = {}; out.accounts.forEach(a => { if (a.email) { const k = a.email.toLowerCase(); if (emails[k]) warn.push(`회사메일 중복: ${a.email}`); emails[k] = 1; } });
+  const accSet = new Set(out.accounts.map(a => a.emp_no).concat(ST.adm.accounts.map(a => a.emp_no)));
+  const tr = sheetRows(wb, '대상자명단', '사번');
+  if (tr) tr.forEach(r => {
+    const emp_no = padEmp(col(r, '사번')), name = col(r, '성명'); if (!emp_no || !name) return;
+    let form_code = col(r, '평가표코드') || null, e1 = padEmp(col(r, '1차 평가자 사번')) || null, e2 = padEmp(col(r, '2차 평가자 사번')) || null;
+    const included = col(r, '대상 여부', '대상여부') !== '제외';
+    if (form_code && !formCodes.has(form_code)) { warn.push(`대상자 ${name}: 평가표 ${form_code} 없음 → 미지정 처리`); form_code = null; }
+    if (e1 && !accSet.has(e1)) { warn.push(`대상자 ${name}: 1차 평가자 사번 ${e1} 계정 없음 → 미지정 처리`); e1 = null; }
+    if (e2 && !accSet.has(e2)) { warn.push(`대상자 ${name}: 2차 평가자 사번 ${e2} 계정 없음 → 미지정 처리`); e2 = null; }
+    if (included && !form_code) warn.push(`대상자 ${name}: 평가표 미지정 (화면에서 지정 필요)`);
+    if (included && !e1) warn.push(`대상자 ${name}: 1차 평가자 미지정`);
+    out.targets.push({ emp_no, name, dept: col(r, '부서') || null, team: col(r, '팀') || null, grade: col(r, '직급') || null, pos: col(r, '직책') || null, form_code, e1_emp: e1, e2_emp: e2, included, note: col(r, '비고') || null });
+  });
+  const hr = sheetRows(wb, '평가이력', '사번');
+  if (hr) hr.forEach(r => {
+    const emp_no = padEmp(col(r, '사번')), year = parseInt(col(r, '연도'), 10), grade = col(r, '등급').toUpperCase();
+    if (!emp_no || !year || !grade || grade === '-') return;
+    if (!GRADES.includes(grade)) { warn.push(`평가이력 ${col(r, '성명') || emp_no} ${year}년: 등급 "${grade}"는 S·A·B·C·D가 아님 → 제외`); return; }
+    out.history.push({ emp_no, year, grade });
+  });
+  const tmp = hr ? hr.filter(r => /임시/.test(col(r, '비고'))).length : 0;
+  if (tmp) warn.push(`평가이력: 임시값(예시) ${tmp}건이 포함되어 있습니다. 실제 등급 확정 후 다시 올려 주세요`);
+  return { out, warn };
+}
+async function onUploadFile(e) {
+  const file = e.target.files[0]; if (!file) return;
+  let P;
+  try { const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' }); P = parseBase(wb); }
+  catch (x) { return toast('엑셀을 읽지 못했습니다: ' + errMsg(x), true); }
+  const o = P.out;
+  ST.upload = P;
+  $('#uplPrev').innerHTML = `<ul class="upl-sum">
+      <li><label class="chk"><input type="checkbox" id="u_f" ${o.forms.length ? 'checked' : 'disabled'}> 평가표 ${o.forms.length}종 · 문항 ${o.items.length}개</label></li>
+      <li><label class="chk"><input type="checkbox" id="u_a" ${o.accounts.length ? 'checked' : 'disabled'}> 평가자 계정 ${o.accounts.length}명</label></li>
+      <li><label class="chk"><input type="checkbox" id="u_h" ${o.history.length ? 'checked' : 'disabled'}> 평가이력 ${o.history.length}건 (${[...new Set(o.history.map(h => h.year))].sort().join('·') || '-'}년)</label></li>
+      <li><label class="chk"><input type="checkbox" id="u_t" ${o.targets.length ? 'checked' : 'disabled'}> 대상자 ${o.targets.length}명 (평가 대상 ${o.targets.filter(t => t.included).length}명) → ${esc(ST.adm.settings.cycle)}년 평가에 반영</label>
+        <label class="chk" style="margin-left:26px;color:var(--ink2)"><input type="checkbox" id="u_ow"> 이미 등록된 대상자의 평가표·평가자도 엑셀 기준으로 덮어쓰기 (체크하지 않으면 화면에서 지정한 값 유지)</label></li></ul>
+    ${P.warn.length ? `<div style="font-size:15px;font-weight:500;color:var(--amber)">확인 사항 ${P.warn.length}건</div><ul class="warn-list">${P.warn.map(w => `<li>${esc(w)}</li>`).join('')}</ul>` : ''}
+    <button class="btn pri" data-act="applyUpload">반영하기</button>`;
+}
+HANDLERS.applyUpload = async a => {
+  const o = ST.upload.out, doF = $('#u_f').checked, doA = $('#u_a').checked, doT = $('#u_t').checked, doH = $('#u_h').checked;
+  if (!doF && !doA && !doT && !doH) return toast('반영할 항목을 선택하세요', true);
+  if (!(await confirmBox('기초데이터 반영', '선택한 항목을 반영합니다. 같은 코드·사번은 덮어씁니다.', '반영'))) return;
+  a.disabled = true; const msg = [];
+  try {
+    if (doF) { await api.adm.upsertForms(o.forms, o.items); msg.push(`평가표 ${o.forms.length}종`); }
+    if (doA) {
+      // 업로드로 본인의 관리자 권한이 해제되지 않도록 보호
+      const accs = o.accounts.map(x => x.emp_no === ST.me.emp_no ? { ...x, role: 'admin' } : x);
+      await api.adm.upsertAccounts(accs); msg.push(`계정 ${accs.length}명`);
+    }
+    if (doT) {
+      const r = await api.adm.upsertTargets(ST.adm.settings.cycle, o.targets, $('#u_ow').checked);
+      msg.push(`대상자 추가 ${r.inserted}명·갱신 ${r.updated}명`);
+      if (r.skipped.length) msg.push(`건너뜀 ${r.skipped.length}명(평가 진행 중: ${r.skipped.join(', ')})`);
+    }
+    if (doH) { await api.adm.upsertHistory(o.history); msg.push(`평가이력 ${o.history.length}건`); }
+    await confirmBox('반영 완료', msg.join('\n'), '확인');
+    go('settings');
+  } catch (e) { a.disabled = false; toast('반영 중 오류: ' + errMsg(e), true); }
+};
+
+/* ---------- 결과 엑셀 ---------- */
+HANDLERS.export = async () => {
+  try { ST.adm = await api.adm.loadAll(); } catch (e) { return toast(errMsg(e), true); }
+  const D = ST.adm, I = admIdx();
+  const T = sortT(D.targets.filter(t => t.included));
+  const sum = (t, e) => e ? (I.items[t.form_code] || []).reduce((s, i) => s + (e.scores[i.seq] ?? 0), 0) : '';
+  const stx = (t, st) => STATUS[stageKey(I, t, st)][0];
+  const wb = XLSX.utils.book_new();
+  const HM = histMap(D.history), HY = histYears();
+  const head = ['사번', '성명', '부서', '팀', '직급', '직책'].concat(HY.map(y => y + '년 등급'), ['평가표코드', '평가표명', '1차 평가자', '1차 상태', '1차 합계', '1차 제출일시', '2차 평가자', '2차 상태', '2차 합계', '2차 제출일시']);
+  const summary = [head].concat(T.map(t => {
+    const e1 = I.ev.get(t.id + '-1'), e2 = I.ev.get(t.id + '-2'), f = I.forms.get(t.form_code) || {};
+    return [t.emp_no, t.name, t.dept, t.team, t.grade, t.pos].concat(HY.map(y => HM.get(t.emp_no + '-' + y) || ''), [t.form_code, f.name, accName(I, t.e1_emp), stx(t, 1), sum(t, e1), e1 && e1.submitted_at ? fmtDT(e1.submitted_at) : '',
+      accName(I, t.e2_emp) || '1차 종결', t.e2_emp ? stx(t, 2) : '', t.e2_emp ? sum(t, e2) : '', e2 && e2.submitted_at ? fmtDT(e2.submitted_at) : '']);
+  }));
+  const ws1 = XLSX.utils.aoa_to_sheet(summary); ws1['!cols'] = [8, 9, 12, 13, 6, 7, 9, 9, 9, 9, 26, 10, 9, 8, 13, 10, 9, 8, 13].map(w => ({ wch: w }));
+  XLSX.utils.book_append_sheet(wb, ws1, '요약');
+  const det = [['사번', '성명', '부서', '팀', '직급', '직책', '평가표코드', '차수', '평가자', '상태', '순서', '역량구분', '역량명', '배점(참고)', '점수']];
+  T.forEach(t => [1, 2].forEach(st => {
+    const e = I.ev.get(t.id + '-' + st); if (!e) return;
+    (I.items[t.form_code] || []).forEach(i => det.push([t.emp_no, t.name, t.dept, t.team, t.grade, t.pos, t.form_code, st + '차', accName(I, e.evaluator_emp), STATUS[e.status][0], i.seq, i.grp, i.name, i.weight_ref ?? '', e.scores[i.seq] ?? '']));
+  }));
+  const ws2 = XLSX.utils.aoa_to_sheet(det); ws2['!cols'] = [8, 9, 12, 13, 6, 7, 9, 6, 10, 9, 6, 8, 22, 9, 6].map(w => ({ wch: w }));
+  XLSX.utils.book_append_sheet(wb, ws2, '점수상세');
+  D.forms.forEach(f => {
+    const its = I.items[f.code] || [], ts = T.filter(t => t.form_code === f.code);
+    if (!ts.length || !its.length) return;
+    const r1 = ['', '', '', '', '', '', ''].concat(its.map(i => '1차'), ['1차'], its.map(i => '2차'), ['2차']);
+    const r2 = ['사번', '성명', '부서', '팀', '직급', '1차 평가자', '2차 평가자'].concat(its.map(i => i.name), ['합계'], its.map(i => i.name), ['합계']);
+    const r3 = ['배점(참고)', '', '', '', '', '', ''].concat(its.map(i => i.weight_ref ?? ''), [''], its.map(i => i.weight_ref ?? ''), ['']);
+    const rows = ts.map(t => {
+      const e1 = I.ev.get(t.id + '-1'), e2 = I.ev.get(t.id + '-2');
+      const sc = e => its.map(i => e && e.status === 'submitted' ? (e.scores[i.seq] ?? '') : '');
+      return [t.emp_no, t.name, t.dept, t.team, t.grade, accName(I, t.e1_emp), accName(I, t.e2_emp) || '1차 종결']
+        .concat(sc(e1), [e1 && e1.status === 'submitted' ? sum(t, e1) : ''], sc(e2), [e2 && e2.status === 'submitted' ? sum(t, e2) : '']);
+    });
+    const ws = XLSX.utils.aoa_to_sheet([[`${f.code} ${f.name} — 제출 완료된 점수만 표시`], r1, r2, r3].concat(rows));
+    ws['!cols'] = [8, 9, 12, 13, 6, 10, 10].map(w => ({ wch: w })).concat(Array(its.length * 2 + 2).fill({ wch: 11 }));
+    const nm = (f.code + ' ' + f.name).replace(/[\\\/\?\*\[\]:]/g, '').slice(0, 31);
+    XLSX.utils.book_append_sheet(wb, ws, nm);
+  });
+  const d = new Date(), stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}_${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}`;
+  XLSX.writeFile(wb, `${D.settings.cycle}_역량평가_결과_${stamp}.xlsx`);
+  toast('다운로드했습니다');
+};
+
+boot();
+</script>
+</body>
+</html>

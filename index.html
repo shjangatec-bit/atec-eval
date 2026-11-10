@@ -735,14 +735,12 @@ function renderMy() {
         <div style="font-size:14px;color:var(--ink2)">${st ? `입력 완료 ${st.n}건 · 점수 차이(편차) ${st.sd}점` : '모든 역량을 입력하면 계산됩니다'}</div></div>
     </div>${statsHint(st)}${sec(1)}${sec(2)}`
     : `<div class="card empty">배정된 평가 대상자가 없습니다.</div>`;
-  $('#app').innerHTML = shell(`<h2>내 평가</h2><p class="desc">역량별로 0~10점(정수)을 입력합니다. 점수는 자동 저장되며, 모두 입력한 뒤 차수별 <b>[최종 제출]</b>을 누르면 완료됩니다. 최종 제출 후에는 수정할 수 없습니다.</p>${body}`);
+  $('#app').innerHTML = shell(`<h2>내 평가</h2><p class="desc">역량별 0~10점을 입력하고, 모두 마치면 <b>[최종 제출]</b>을 누르세요. (자동 저장)</p>${body}`);
 }
 
 const ADJ = () => ST.settings.adj_target ?? 80;
 function adjNoteHtml() {
-  return `<div class="note info adj"><b>조정계수 안내</b> — 최종 점수는 부서(사업부·실)별 평균이 <b>${ADJ()}점</b>이 되도록 조정됩니다.
-    실장·사업부장은 별도 그룹, 인원이 적은 그룹은 전사 평균 기준으로 조정합니다.<br>
-    모두 높게 주면 조정 후 차이만 줄어들 뿐 유리해지지 않습니다. <b>잘한 사람과 보완이 필요한 사람의 차이가 드러나도록</b> 평가해 주세요.</div>`;
+  return `<div class="note info adj">최종 점수는 부서별 평균 <b>${ADJ()}점</b> 기준으로 조정됩니다. 사람 간 차이가 드러나게 평가해 주세요.</div>`;
 }
 // 내가 준 점수(모든 역량 입력 완료분)의 100점 환산 평균·편차
 function myStats(stage) {
@@ -869,7 +867,7 @@ function renderEval() {
       </div>`;
     }).join('');
   }).join('');
-  const notes = [`<div class="note info adj">최종 점수는 부서별 평균이 <b>${ADJ()}점</b>이 되도록 조정됩니다. 대상자 간 차이가 드러나도록 평가해 주세요.</div>`];
+  const notes = [`<div class="note info adj">부서별 평균 <b>${ADJ()}점</b> 기준으로 조정됩니다. 차이가 드러나게 평가해 주세요.</div>`];
   if (E.stage === 2) notes.push(`<div class="note info">2차 평가입니다. 역량별로 1차 평가 점수가 참고로 표시됩니다${E.p1 ? ` (1차 합계 ${E.items.reduce((a, i) => a + (E.p1[i.seq] || 0), 0)}점, 100점 환산 ${score100(E.items, E.p1) ?? '-'}점)` : ''}. 1차 점수는 수정할 수 없습니다.</div>`);
   if (E.status === 'submitted') notes.push(`<div class="note ok">제출 완료 (${esc(fmtDT(E.submitted_at))}). 수정이 필요하면 인사총무파트에 요청하세요.</div>`);
   else if (!ST.settings.is_open) notes.push('<div class="note warn">평가 기간이 아니어서 입력할 수 없습니다.</div>');

@@ -835,7 +835,7 @@ HANDLERS.myCompare = a => {
     <div class="tbl-wrap"><table><thead><tr><th>성명</th><th>팀</th><th>평가표</th><th class="num">점수(100점 환산)</th><th class="num">원점수</th><th class="num">역량 평균</th>${stage === 2 ? '<th class="num">1차 100점 환산</th>' : ''}<th>상태</th></tr></thead><tbody>
     ${rows.map(({ r, x }) => { const p1 = stage === 2 && ST.myP1.get(r.target_id); return `<tr><td><b>${esc(r.name)}</b></td><td>${esc(r.team || '')}</td><td>${esc(r.form_name || '')}</td>
       <td class="num"><b>${x.s100 ?? '-'}</b></td><td class="num" style="color:var(--muted)">${x.filled < x.n ? `입력 ${x.filled}/${x.n}` : `${x.sum} / ${x.max}`}</td>
-      <td class="num">${x.filled ? (x.sum / x.filled).toFixed(1) : '-'}</td>${stage === 2 ? `<td class="num">${p1 ? (score100(ST.myItems[r.form_code], p1.scores) ?? '-') : '-'}</td>` : ''}<td>${badge(x.e.status)}</td></tr>`; }).join('')}
+      <td class="num">${x.filled ? (x.sum / x.filled).toFixed(1) : '-'}</td>${stage === 2 ? `<td class="num">${p1 ? (score100(ST.myItems[r.form_code], p1.scores) ?? '-') : '-'}</td>` : ''}<td>${badge(x.e.status === 'draft' && x.filled === x.n ? 'filled' : x.e.status)}</td></tr>`; }).join('')}
     </tbody></table></div>
     <div class="acts"><button class="btn" data-x="c">닫기</button></div>`, true);
   m.addEventListener('click', e => { if (e.target.dataset.x) closeModal(); });

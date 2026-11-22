@@ -174,6 +174,9 @@ td select,td input.inp{padding:5px 7px;border:1px solid var(--line);border-radiu
 .gauge i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:var(--pri)}
 .gauge em{position:absolute;top:-4px;width:2px;height:16px;background:var(--ink);border-radius:1px}
 .sec-tgt{font-size:15px;color:var(--ink2)}
+.tier-h{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline;margin:14px 0 6px;padding:6px 12px;background:var(--pri-l,#eef3ff);border-radius:8px;font-size:15px}
+.tier-h b{color:var(--pri)}
+.tier-h .tn{color:var(--ink2)}
 .totop{position:fixed;right:20px;bottom:24px;z-index:40;width:48px;height:48px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--pri);font-size:22px;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(20,40,90,.16);opacity:0;pointer-events:none;transform:translateY(8px);transition:opacity .2s,transform .2s}
 .totop.show{opacity:1;pointer-events:auto;transform:none}
 .totop:hover{background:var(--pri);color:#fff;border-color:var(--pri)}
@@ -712,14 +715,16 @@ function renderMy() {
     const rows = ST.my.filter(r => r.stage === stage).sort((a, b) => (a.dept || '').localeCompare(b.dept || '') || (a.team || '').localeCompare(b.team || '') || a.name.localeCompare(b.name));
     if (!rows.length) return '';
     const done = rows.filter(r => r.status === 'submitted').length;
+    const multi = myTiers(stage).length > 1;
+    if (multi) rows.sort((a, b) => TIERS.indexOf(tierOf(a)) - TIERS.indexOf(tierOf(b)));
     const sa = stageAvg(stage);
-    return `<div class="sec-h"><h3>${stage}차 평가</h3><span>${rows.length}명 중 ${done}명 제출</span><span class="sec-tgt">· 내 평균 ${sa ? `<b>${sa.avg}</b>점` : '-'} / 목표 ${ADJ()}점</span>${rows.some(r => ST.myEv.get(r.target_id + '-' + stage)) ? `<button class="btn sm" data-act="myCompare" data-s="${stage}">점수 비교</button>` : ''}</div>
-      <div class="list">${rows.map(r => {
+    return `<div class="sec-h"><h3>${stage}차 평가</h3><span>${rows.length}명 중 ${done}명 제출</span><span class="sec-tgt">· ${multi ? '직책 구분별로 평균을 비교합니다' : `내 평균 ${sa ? `<b>${sa.avg}</b>점` : '-'} / 목표 ${ADJ()}점`}</span>${rows.some(r => ST.myEv.get(r.target_id + '-' + stage)) ? `<button class="btn sm" data-act="myCompare" data-s="${stage}">점수 비교</button>` : ''}</div>
+      <div class="list">${rows.map((r, i) => {
         const k = myKey(r);
         const btn = k === 'submitted' ? `<button class="btn sm" data-act="open" data-t="${r.target_id}" data-s="${stage}">보기</button>`
           : (k === 'wait' || k === 'noform') ? `<button class="btn sm" disabled>${k === 'wait' ? '1차 제출 후 가능' : '평가 불가'}</button>`
           : `<button class="btn sm ${k === 'filled' ? '' : 'pri'}" data-act="open" data-t="${r.target_id}" data-s="${stage}">${k === 'filled' ? '수정' : k === 'draft' ? '이어서 작성' : '평가하기'}</button>`;
-        return `<div class="trow">
+        return tierHead(stage, rows, i, multi) + `<div class="trow">
           <div class="nm">${esc(r.name)}</div>
           <div class="meta"><div>${esc(r.dept || '')}${r.team && r.team !== r.dept ? ' · ' + esc(r.team) : ''} · ${esc(r.grade || '')}${r.pos ? ' / ' + esc(r.pos) : ''}</div>
             <div style="color:var(--muted)">${esc(r.form_name || '평가표 미지정')}</div></div>
@@ -739,12 +744,26 @@ function renderMy() {
 }
 
 const ADJ = () => ST.settings.adj_target ?? 80;
+// 비교 구분(직책): 같은 구분끼리 평균을 목표 점수와 비교
+const TIERS = ['팀원', '팀장·파트장', '실장·사업부장·소장'];
+function tierOf(r) { const p = String((r && r.pos) || '').replace(/\s/g, ''); if (/실장|사업부장|소장|본부장|공장장/.test(p)) return TIERS[2]; if (/팀장|파트장/.test(p)) return TIERS[1]; return TIERS[0]; }
+function myTiers(stage) { return TIERS.filter(t => ST.my.some(r => r.stage === stage && tierOf(r) === t)); }
+function tierHead(stage, rows, i, multi) {
+  const t = tierOf(rows[i]); if (!multi || (i > 0 && tierOf(rows[i - 1]) === t)) return '';
+  const n = rows.filter(r => tierOf(r) === t).length, s = stageAvg(stage, null, null, t);
+  return `<div class="tier-h"><b>${t}</b><span class="tn">${n}명 · 내 평균 ${s ? `<b>${s.avg}</b>점` : '-'} / 목표 ${ADJ()}점</span></div>`;
+}
+function stageStatsHtml(stage) {
+  const tiers = myTiers(stage);
+  if (tiers.length > 1) return `<p style="margin-top:-6px">내가 준 ${stage}차 점수 평균 (조정 기준 ${ADJ()}점, 직책 구분별)<br>${tiers.map(t => { const s = myStats(stage, t); return `${t} <b>${s ? s.avg + '점' : '-'}</b>${s ? ` (${s.n}명)` : ''}`; }).join(' · ')}</p>`;
+  const st = myStats(stage); return st ? `<p style="margin-top:-6px">내가 준 ${stage}차 점수 평균 <b>${st.avg}점</b> (조정 기준 ${ADJ()}점) · 점수 차이(편차) ${st.sd}점</p>${statsHint(st)}` : '';
+}
 function adjNoteHtml() {
   return `<div class="note info adj">최종 점수는 부서별 평균 <b>${ADJ()}점</b> 기준으로 조정됩니다. 사람 간 차이가 드러나게 평가해 주세요.</div>`;
 }
 // 내가 준 점수(모든 역량 입력 완료분)의 100점 환산 평균·편차
-function myStats(stage) {
-  const v = ST.my.filter(r => !stage || r.stage === stage).map(r => myScoreInfo(r)).filter(x => x && x.s100 != null).map(x => x.s100);
+function myStats(stage, tier) {
+  const v = ST.my.filter(r => (!stage || r.stage === stage) && (!tier || tierOf(r) === tier)).map(r => myScoreInfo(r)).filter(x => x && x.s100 != null).map(x => x.s100);
   if (!v.length) return null;
   const avg = v.reduce((a, b) => a + b, 0) / v.length;
   const sd = v.length > 1 ? Math.sqrt(v.reduce((a, b) => a + (b - avg) ** 2, 0) / (v.length - 1)) : 0;
@@ -758,8 +777,8 @@ function partial100(items, scores) {
   return Math.round(its.reduce((a, i) => a + scores[i.seq] * (noW ? 1 : +i.weight_ref), 0) / ws * 10 * 10) / 10;
 }
 // 해당 차수에서 내가 준 점수 평균 (cur: 지금 입력 중인 대상자 점수로 대체)
-function stageAvg(stage, curTid, curVal) {
-  const v = ST.my.filter(r => r.stage === stage && r.target_id !== curTid).map(r => myScoreInfo(r)).filter(x => x && x.s100 != null).map(x => x.s100);
+function stageAvg(stage, curTid, curVal, tier) {
+  const v = ST.my.filter(r => r.stage === stage && r.target_id !== curTid && (!tier || tierOf(r) === tier)).map(r => myScoreInfo(r)).filter(x => x && x.s100 != null).map(x => x.s100);
   if (curVal != null) v.push(curVal);
   if (!v.length) return null;
   return { n: v.length, avg: Math.round(v.reduce((a, b) => a + b, 0) / v.length * 10) / 10 };
@@ -801,7 +820,7 @@ HANDLERS.submitAll = async a => {
   const rows = open.map(r => ({ r, x: myScoreInfo(r) })).sort((p, q) => (q.x.s100 ?? 0) - (p.x.s100 ?? 0));
   const m = modal(`<h3>${stage}차 평가 최종 제출</h3>
     <p>아래 ${rows.length}명의 평가를 한 번에 제출합니다. <b>제출 후에는 수정할 수 없습니다.</b></p>
-    ${(() => { const st = myStats(stage); return st ? `<p style="margin-top:-6px">내가 준 ${stage}차 점수 평균 <b>${st.avg}점</b> (조정 기준 ${ADJ()}점) · 점수 차이(편차) ${st.sd}점</p>${statsHint(st)}` : ''; })()}
+    ${stageStatsHtml(stage)}
     <div class="tbl-wrap"><table><thead><tr><th>성명</th><th>팀</th><th class="num">점수(100점 환산)</th><th class="num">원점수</th></tr></thead><tbody>
     ${rows.map(({ r, x }) => `<tr><td><b>${esc(r.name)}</b></td><td>${esc(r.team || '')}</td><td class="num"><b>${x.s100 ?? '-'}</b></td><td class="num" style="color:var(--muted)">${x.sum} / ${x.max}</td></tr>`).join('')}
     </tbody></table></div>
@@ -828,12 +847,13 @@ function myScoreCell(r) {
 }
 HANDLERS.myCompare = a => {
   const stage = +a.dataset.s;
+  const multi = myTiers(stage).length > 1;
   const rows = ST.my.filter(r => r.stage === stage).map(r => ({ r, x: myScoreInfo(r) })).filter(o => o.x)
-    .sort((p, q) => (q.x.s100 ?? -1) - (p.x.s100 ?? -1) || p.r.name.localeCompare(q.r.name));
+    .sort((p, q) => (multi ? TIERS.indexOf(tierOf(p.r)) - TIERS.indexOf(tierOf(q.r)) : 0) || (q.x.s100 ?? -1) - (p.x.s100 ?? -1) || p.r.name.localeCompare(q.r.name));
   const m = modal(`<h3>${stage}차 평가 · 내가 준 점수</h3>
     <p>${stage === 2 ? '본인이 입력한 2차 점수와 제출된 1차 점수(참고)를 표시합니다.' : '본인이 입력한 점수만 표시됩니다.'} 점수는 100점 환산 기준입니다. 100점 환산은 평가표 배점 비율을 반영한 점수로, 평가표가 달라도 비교할 수 있습니다.</p>
-    <div class="tbl-wrap"><table><thead><tr><th>성명</th><th>팀</th><th>평가표</th><th class="num">점수(100점 환산)</th><th class="num">원점수</th><th class="num">역량 평균</th>${stage === 2 ? '<th class="num">1차 100점 환산</th>' : ''}<th>상태</th></tr></thead><tbody>
-    ${rows.map(({ r, x }) => { const p1 = stage === 2 && ST.myP1.get(r.target_id); return `<tr><td><b>${esc(r.name)}</b></td><td>${esc(r.team || '')}</td><td>${esc(r.form_name || '')}</td>
+    ${multi ? stageStatsHtml(stage) : ''}<div class="tbl-wrap"><table><thead><tr>${multi ? '<th>구분</th>' : ''}<th>성명</th><th>팀</th><th>평가표</th><th class="num">점수(100점 환산)</th><th class="num">원점수</th><th class="num">역량 평균</th>${stage === 2 ? '<th class="num">1차 100점 환산</th>' : ''}<th>상태</th></tr></thead><tbody>
+    ${rows.map(({ r, x }) => { const p1 = stage === 2 && ST.myP1.get(r.target_id); return `<tr>${multi ? `<td>${tierOf(r)}</td>` : ''}<td><b>${esc(r.name)}</b></td><td>${esc(r.team || '')}</td><td>${esc(r.form_name || '')}</td>
       <td class="num"><b>${x.s100 ?? '-'}</b></td><td class="num" style="color:var(--muted)">${x.filled < x.n ? `입력 ${x.filled}/${x.n}` : `${x.sum} / ${x.max}`}</td>
       <td class="num">${x.filled ? (x.sum / x.filled).toFixed(1) : '-'}</td>${stage === 2 ? `<td class="num">${p1 ? (score100(ST.myItems[r.form_code], p1.scores) ?? '-') : '-'}</td>` : ''}<td>${badge(x.e.status === 'draft' && x.filled === x.n ? 'filled' : x.e.status)}</td></tr>`; }).join('')}
     </tbody></table></div>
@@ -901,7 +921,7 @@ function updateSum() {
   const sum = vals.reduce((a, b) => a + b, 0);
   const s100 = score100(E.items, E.scores), cur = s100 != null ? s100 : partial100(E.items, E.scores);
   const tg = $('#evTarget');
-  if (tg && ST.my) tg.innerHTML = targetHtml(stageAvg(E.stage, E.t.target_id, cur), `내 ${E.stage}차`) + (s100 == null && cur != null ? '<span class="tn" style="font-size:13px;color:var(--muted)">(이 대상자는 입력한 역량까지 반영)</span>' : '');
+  if (tg && ST.my) tg.innerHTML = (() => { const tr = myTiers(E.stage).length > 1 ? tierOf(E.t) : null; return targetHtml(stageAvg(E.stage, E.t.target_id, cur, tr), `내 ${E.stage}차${tr ? ' ' + tr : ''}`); })() + (s100 == null && cur != null ? '<span class="tn" style="font-size:13px;color:var(--muted)">(이 대상자는 입력한 역량까지 반영)</span>' : '');
   setTimeout(placeTopBtn, 0);
   $('#evSum').innerHTML = `입력 <b>${vals.length}</b> / ${E.items.length} &nbsp;·&nbsp; 점수 <b>${s100 != null ? s100 : '-'}</b>점 <span style="color:var(--muted)">/ 100점 환산</span> &nbsp;<span style="color:var(--muted);font-size:13px">(원점수 ${sum}/${E.items.length * 10})</span>`;
 }

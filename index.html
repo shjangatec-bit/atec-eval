@@ -840,7 +840,7 @@ HANDLERS.submitAll = async a => {
 const W1 = 0.5;
 function p1Score(r) { const e = r.stage === 2 && ST.myP1 && ST.myP1.get(r.target_id), its = (ST.myItems || {})[r.form_code]; return e && its && its.length ? score100(its, e.scores) : null; }
 function totalScore(p1, s2) { return p1 != null && s2 != null ? Math.round((p1 * W1 + s2 * (1 - W1)) * 10) / 10 : null; }
-const W_LABEL = () => `종합(${W1 * 10}:${(1 - W1) * 10})`;
+const W_LABEL = () => '1·2차 종합';
 function myScoreInfo(r) {
   const e = ST.myEv && ST.myEv.get(r.target_id + '-' + r.stage), its = (ST.myItems || {})[r.form_code] || [];
   if (!e || !its.length) return null;
@@ -861,7 +861,7 @@ HANDLERS.myCompare = a => {
   const rows = ST.my.filter(r => r.stage === stage).map(r => ({ r, x: myScoreInfo(r) })).filter(o => o.x)
     .sort((p, q) => (multi ? TIERS.indexOf(tierOf(p.r)) - TIERS.indexOf(tierOf(q.r)) : 0) || (q.x.s100 ?? -1) - (p.x.s100 ?? -1) || p.r.name.localeCompare(q.r.name));
   const m = modal(`<h3>${stage}차 평가 · 내가 준 점수</h3>
-    <p>${stage === 2 ? `본인이 입력한 2차 점수, 제출된 1차 점수, 1차·2차 ${W_LABEL()} 점수를 표시합니다.` : '본인이 입력한 점수만 표시됩니다.'} 점수는 100점 환산 기준입니다. 100점 환산은 평가표 배점 비율을 반영한 점수로, 평가표가 달라도 비교할 수 있습니다.</p>
+    <p>${stage === 2 ? '본인이 입력한 2차 점수, 제출된 1차 점수, 1·2차 종합 점수를 표시합니다.' : '본인이 입력한 점수만 표시됩니다.'} 점수는 100점 환산 기준입니다. 100점 환산은 평가표 배점 비율을 반영한 점수로, 평가표가 달라도 비교할 수 있습니다.</p>
     ${multi ? stageStatsHtml(stage) : ''}<div class="tbl-wrap"><table><thead><tr>${multi ? '<th>구분</th>' : ''}<th>성명</th><th>팀</th>${stage === 2 ? `<th class="num">2차</th><th class="num">원점수</th><th class="num">1차</th><th class="num">${W_LABEL()}</th>` : '<th>평가표</th><th class="num">점수(100점 환산)</th><th class="num">원점수</th><th class="num">역량 평균</th>'}<th>상태</th></tr></thead><tbody>
     ${rows.map(({ r, x }) => { const p1 = stage === 2 && ST.myP1.get(r.target_id); return `<tr>${multi ? `<td>${tierOf(r)}</td>` : ''}<td><b>${esc(r.name)}</b></td><td>${esc(r.team || '')}</td>${stage === 2 ? '' : `<td>${esc(r.form_name || '')}</td>`}
       <td class="num"><b>${x.s100 ?? '-'}</b></td><td class="num" style="color:var(--muted)">${x.filled < x.n ? `입력 ${x.filled}/${x.n}` : `${x.sum} / ${x.max}`}</td>

@@ -720,6 +720,12 @@ function renderMy() {
     const done = rows.filter(r => r.status === 'submitted').length;
     const multi = myTiers(stage).length > 1;
     if (multi) rows.sort((a, b) => TIERS.indexOf(tierOf(a)) - TIERS.indexOf(tierOf(b)));
+    // 2차 목록은 보기용으로 1·2차 종합 점수 순서 (종합 없으면 1차 점수 순, 1차 대기는 맨 뒤)
+    if (stage === 2) {
+      const tot = r => { const x = myScoreInfo(r); return x && x.filled === x.n ? totalScore(p1Score(r), x.s100) : null; };
+      const key = r => [tot(r) ?? -1, p1Score(r) ?? -1];
+      rows.sort((a, b) => (multi ? TIERS.indexOf(tierOf(a)) - TIERS.indexOf(tierOf(b)) : 0) || key(b)[0] - key(a)[0] || key(b)[1] - key(a)[1]);
+    }
     const sa = stageAvg(stage);
     return `<div class="sec-h"><h3>${stage}차 평가</h3><span>${rows.length}명 중 ${done}명 제출</span><span class="sec-tgt">· ${multi ? '직책 구분별로 평균을 비교합니다' : `내 평균 ${sa ? `<b>${sa.avg}</b>점` : '-'} / 목표 ${ADJ()}점`}</span>${rows.some(r => ST.myEv.get(r.target_id + '-' + stage)) ? `<button class="btn sm" data-act="myCompare" data-s="${stage}">점수 비교</button>` : ''}</div>
       <div class="list">${rows.map((r, i) => {

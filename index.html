@@ -1416,6 +1416,17 @@ HANDLERS.export = async () => {
     return [t.emp_no, t.name, t.dept, t.team, t.grade, t.pos].concat(HY.map(y => HM.get(t.emp_no + '-' + y) || ''), [t.form_code, f.name, accName(I, t.e1_emp), stx(t, 1), sum(t, e1), e1 && e1.submitted_at ? fmtDT(e1.submitted_at) : '',
       accName(I, t.e2_emp) || '1차 종결', t.e2_emp ? stx(t, 2) : '', t.e2_emp ? sum(t, e2) : '', e2 && e2.submitted_at ? fmtDT(e2.submitted_at) : '']);
   }));
+  // 점수 취합: 1차·2차 100점 환산(제출 완료분) + 평가자별 비교 그룹(평가자가 여러 직책 구분을 평가하면 구분별로 나눔)
+  const s100 = (t, st) => { const e = I.ev.get(t.id + '-' + st); return e && e.status === 'submitted' ? score100(I.items[t.form_code] || [], e.scores) : null; };
+  const multiT = (emp, st) => new Set(T.filter(t => (st === 1 ? t.e1_emp : t.e2_emp) === emp).map(tierOf)).size > 1;
+  const grp = (t, st) => { const emp = st === 1 ? t.e1_emp : t.e2_emp; if (!emp) return '–'; const n = accName(I, emp); return multiT(emp, st) ? n + '·' + tierOf(t) : n; };
+  const agg = [['상위부서', '부서', '성명', '1차', '2차', '비고', '1차 비교그룹', '2차 비교그룹', '직책', '1차 평가자', '2차 평가자']].concat(T.map(t => {
+    const a1 = s100(t, 1), a2 = t.e2_emp ? s100(t, 2) : null, note = [];
+    if (a1 == null) note.push('1차 미제출'); if (!t.e2_emp) note.push('1차 종결'); else if (a2 == null) note.push('2차 미제출');
+    return [t.dept || '', t.team || '', t.name, a1 ?? '', t.e2_emp ? (a2 ?? '') : '–', note.join(', '), grp(t, 1), grp(t, 2), t.pos || '', accName(I, t.e1_emp), accName(I, t.e2_emp)];
+  }));
+  const ws0 = XLSX.utils.aoa_to_sheet(agg); ws0['!cols'] = [12, 13, 9, 7, 7, 16, 18, 18, 8, 10, 10].map(w => ({ wch: w }));
+  XLSX.utils.book_append_sheet(wb, ws0, '점수 취합');
   const ws1 = XLSX.utils.aoa_to_sheet(summary); ws1['!cols'] = [8, 9, 12, 13, 6, 7, 9, 9, 9, 9, 26, 10, 9, 8, 13, 10, 9, 8, 13].map(w => ({ wch: w }));
   XLSX.utils.book_append_sheet(wb, ws1, '요약');
   const det = [['사번', '성명', '부서', '팀', '직급', '직책', '평가표코드', '차수', '평가자', '상태', '순서', '역량구분', '역량명', '배점(참고)', '점수']];

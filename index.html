@@ -872,10 +872,10 @@ HANDLERS.myCompare = a => {
   rows.forEach((o, i) => { const prev = rows[i - 1]; const same = prev && (!multi || tierOf(prev.r) === tierOf(o.r));
     o.rank = o.k == null ? null : (same && prev.k === o.k ? prev.rank : (same ? rows.slice(0, i).filter(z => (!multi || tierOf(z.r) === tierOf(o.r)) && z.k != null).length + 1 : 1)); });
   const m = modal(`<h3>${stage}차 평가 · 내가 준 점수</h3>
-    <p>${stage === 2 ? '1·2차 종합 점수 순서입니다. 본인이 입력한 2차 점수와 제출된 1차 점수를 함께 표시합니다.' : '본인이 입력한 점수 순서입니다.'}${multi ? ' 순위는 직책 구분별로 매깁니다.' : ''} 점수는 100점 환산 기준입니다.</p>
-    ${multi ? stageStatsHtml(stage) : ''}<div class="tbl-wrap"><table><thead><tr><th class="num">순위</th>${multi ? '<th>구분</th>' : ''}<th>성명</th><th>팀</th>${stage === 2 ? `<th class="num">${W_LABEL()}</th><th class="num">2차</th><th class="num">1차</th>` : '<th class="num">점수(100점 환산)</th><th class="num">원점수</th>'}<th>상태</th></tr></thead><tbody>
+    <p>${stage === 2 ? '1차·2차 점수와 1·2차 종합 점수를 표시하며, 종합 점수 순서입니다.' : '본인이 입력한 점수 순서입니다.'}${multi ? ' 순위는 직책 구분별로 매깁니다.' : ''} 점수는 100점 환산 기준입니다.</p>
+    ${multi ? stageStatsHtml(stage) : ''}<div class="tbl-wrap"><table><thead><tr><th class="num">순위</th>${multi ? '<th>구분</th>' : ''}<th>성명</th><th>팀</th>${stage === 2 ? `<th class="num">1차</th><th class="num">2차</th><th class="num">${W_LABEL()}</th>` : '<th class="num">점수(100점 환산)</th><th class="num">원점수</th>'}<th>상태</th></tr></thead><tbody>
     ${rows.map(({ r, x, k, rank }) => `<tr><td class="num"><b>${rank ?? '-'}</b></td>${multi ? `<td>${tierOf(r)}</td>` : ''}<td><b>${esc(r.name)}</b></td><td>${esc(r.team || '')}</td>
-      ${stage === 2 ? `<td class="num"><b style="color:var(--pri)">${k ?? '-'}</b></td><td class="num">${x.filled < x.n ? `입력 ${x.filled}/${x.n}` : x.s100}</td><td class="num">${p1Score(r) ?? '-'}</td>`
+      ${stage === 2 ? `<td class="num">${p1Score(r) ?? '-'}</td><td class="num">${x.filled < x.n ? `입력 ${x.filled}/${x.n}` : x.s100}</td><td class="num"><b style="color:var(--pri)">${k ?? '-'}</b></td>`
         : `<td class="num"><b>${x.filled < x.n ? `입력 ${x.filled}/${x.n}` : x.s100}</b></td><td class="num" style="color:var(--muted)">${x.sum} / ${x.max}</td>`}
       <td>${badge(x.e.status === 'draft' && x.filled === x.n ? 'filled' : x.e.status)}</td></tr>`).join('')}
     </tbody></table></div>

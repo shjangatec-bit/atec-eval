@@ -121,6 +121,9 @@ td select,td input.inp{padding:5px 7px;border:1px solid var(--line);border-radiu
 .trow .sc{min-width:92px;text-align:right;font-size:15px;color:var(--ink2)}
 .trow .sc b{font-size:19px;color:var(--ink)}
 .trow .sc small{color:var(--muted)}
+.trow .sc .p1s{font-size:13px;color:var(--ink2);margin-top:3px;white-space:nowrap}
+.trow .sc .p1s b{font-size:15px;color:var(--ink)}
+.trow .sc .p1s .tot{color:var(--pri)}
 .p1{font-size:14px;color:var(--ink2);background:#f1f4f9;border-radius:6px;padding:2px 8px;white-space:nowrap}
 .p1 b{color:var(--ink)}
 .sec-h .btn{margin-left:auto}
@@ -821,8 +824,8 @@ HANDLERS.submitAll = async a => {
   const m = modal(`<h3>${stage}차 평가 최종 제출</h3>
     <p>아래 ${rows.length}명의 평가를 한 번에 제출합니다. <b>제출 후에는 수정할 수 없습니다.</b></p>
     ${stageStatsHtml(stage)}
-    <div class="tbl-wrap"><table><thead><tr><th>성명</th><th>팀</th><th class="num">점수(100점 환산)</th><th class="num">원점수</th></tr></thead><tbody>
-    ${rows.map(({ r, x }) => `<tr><td><b>${esc(r.name)}</b></td><td>${esc(r.team || '')}</td><td class="num"><b>${x.s100 ?? '-'}</b></td><td class="num" style="color:var(--muted)">${x.sum} / ${x.max}</td></tr>`).join('')}
+    <div class="tbl-wrap"><table><thead><tr><th>성명</th><th>팀</th><th class="num">점수(100점 환산)</th><th class="num">원점수</th>${stage === 2 ? `<th class="num">1차</th><th class="num">${W_LABEL()}</th>` : ''}</tr></thead><tbody>
+    ${rows.map(({ r, x }) => `<tr><td><b>${esc(r.name)}</b></td><td>${esc(r.team || '')}</td><td class="num"><b>${x.s100 ?? '-'}</b></td><td class="num" style="color:var(--muted)">${x.sum} / ${x.max}</td>${stage === 2 ? `<td class="num">${p1Score(r) ?? '-'}</td><td class="num"><b>${totalScore(p1Score(r), x.s100) ?? '-'}</b></td>` : ''}</tr>`).join('')}
     </tbody></table></div>
     <div class="acts"><button class="btn" data-x="n">취소</button><button class="btn pri" data-x="y">최종 제출</button></div>`, true);
   m.addEventListener('click', async e => {
@@ -833,6 +836,11 @@ HANDLERS.submitAll = async a => {
     catch (er) { closeModal(); toast(errMsg(er), true); go('my'); }
   });
 };
+// 1차·2차 종합 점수 (1차 가중치 W1, 2차 1-W1)
+const W1 = 0.5;
+function p1Score(r) { const e = r.stage === 2 && ST.myP1 && ST.myP1.get(r.target_id), its = (ST.myItems || {})[r.form_code]; return e && its && its.length ? score100(its, e.scores) : null; }
+function totalScore(p1, s2) { return p1 != null && s2 != null ? Math.round((p1 * W1 + s2 * (1 - W1)) * 10) / 10 : null; }
+const W_LABEL = () => `종합(${W1 * 10}:${(1 - W1) * 10})`;
 function myScoreInfo(r) {
   const e = ST.myEv && ST.myEv.get(r.target_id + '-' + r.stage), its = (ST.myItems || {})[r.form_code] || [];
   if (!e || !its.length) return null;
@@ -840,10 +848,12 @@ function myScoreInfo(r) {
   return { e, n: its.length, filled: vals.length, sum: vals.reduce((a, b) => a + b, 0), max: its.length * 10, s100: score100(its, e.scores) };
 }
 function myScoreCell(r) {
-  const x = myScoreInfo(r);
-  if (!x) return '';
-  if (x.filled < x.n) return `입력 ${x.filled}/${x.n}`;
-  return `<b>${x.s100}</b><small> / 100</small>${x.max !== 100 ? `<div style="font-size:12px;color:var(--muted)">원점수 ${x.sum}/${x.max}</div>` : ''}`;
+  const x = myScoreInfo(r), p1 = p1Score(r);
+  let h = '';
+  if (x) h = x.filled < x.n ? `입력 ${x.filled}/${x.n}` : `${r.stage === 2 && p1 != null ? '<small>2차 </small>' : ''}<b>${x.s100}</b><small> / 100</small>${x.max !== 100 ? `<div style="font-size:12px;color:var(--muted)">원점수 ${x.sum}/${x.max}</div>` : ''}`;
+  if (p1 == null) return h;
+  const tot = x && x.filled === x.n ? totalScore(p1, x.s100) : null;
+  return `${h}<div class="p1s">1차 <b>${p1}</b>${tot != null ? ` · ${W_LABEL()} <b class="tot">${tot}</b>` : ''}</div>`;
 }
 HANDLERS.myCompare = a => {
   const stage = +a.dataset.s;
@@ -851,11 +861,11 @@ HANDLERS.myCompare = a => {
   const rows = ST.my.filter(r => r.stage === stage).map(r => ({ r, x: myScoreInfo(r) })).filter(o => o.x)
     .sort((p, q) => (multi ? TIERS.indexOf(tierOf(p.r)) - TIERS.indexOf(tierOf(q.r)) : 0) || (q.x.s100 ?? -1) - (p.x.s100 ?? -1) || p.r.name.localeCompare(q.r.name));
   const m = modal(`<h3>${stage}차 평가 · 내가 준 점수</h3>
-    <p>${stage === 2 ? '본인이 입력한 2차 점수와 제출된 1차 점수(참고)를 표시합니다.' : '본인이 입력한 점수만 표시됩니다.'} 점수는 100점 환산 기준입니다. 100점 환산은 평가표 배점 비율을 반영한 점수로, 평가표가 달라도 비교할 수 있습니다.</p>
-    ${multi ? stageStatsHtml(stage) : ''}<div class="tbl-wrap"><table><thead><tr>${multi ? '<th>구분</th>' : ''}<th>성명</th><th>팀</th><th>평가표</th><th class="num">점수(100점 환산)</th><th class="num">원점수</th><th class="num">역량 평균</th>${stage === 2 ? '<th class="num">1차 100점 환산</th>' : ''}<th>상태</th></tr></thead><tbody>
-    ${rows.map(({ r, x }) => { const p1 = stage === 2 && ST.myP1.get(r.target_id); return `<tr>${multi ? `<td>${tierOf(r)}</td>` : ''}<td><b>${esc(r.name)}</b></td><td>${esc(r.team || '')}</td><td>${esc(r.form_name || '')}</td>
+    <p>${stage === 2 ? `본인이 입력한 2차 점수, 제출된 1차 점수, 1차·2차 ${W_LABEL()} 점수를 표시합니다.` : '본인이 입력한 점수만 표시됩니다.'} 점수는 100점 환산 기준입니다. 100점 환산은 평가표 배점 비율을 반영한 점수로, 평가표가 달라도 비교할 수 있습니다.</p>
+    ${multi ? stageStatsHtml(stage) : ''}<div class="tbl-wrap"><table><thead><tr>${multi ? '<th>구분</th>' : ''}<th>성명</th><th>팀</th>${stage === 2 ? `<th class="num">2차</th><th class="num">원점수</th><th class="num">1차</th><th class="num">${W_LABEL()}</th>` : '<th>평가표</th><th class="num">점수(100점 환산)</th><th class="num">원점수</th><th class="num">역량 평균</th>'}<th>상태</th></tr></thead><tbody>
+    ${rows.map(({ r, x }) => { const p1 = stage === 2 && ST.myP1.get(r.target_id); return `<tr>${multi ? `<td>${tierOf(r)}</td>` : ''}<td><b>${esc(r.name)}</b></td><td>${esc(r.team || '')}</td>${stage === 2 ? '' : `<td>${esc(r.form_name || '')}</td>`}
       <td class="num"><b>${x.s100 ?? '-'}</b></td><td class="num" style="color:var(--muted)">${x.filled < x.n ? `입력 ${x.filled}/${x.n}` : `${x.sum} / ${x.max}`}</td>
-      <td class="num">${x.filled ? (x.sum / x.filled).toFixed(1) : '-'}</td>${stage === 2 ? `<td class="num">${p1 ? (score100(ST.myItems[r.form_code], p1.scores) ?? '-') : '-'}</td>` : ''}<td>${badge(x.e.status === 'draft' && x.filled === x.n ? 'filled' : x.e.status)}</td></tr>`; }).join('')}
+      ${stage === 2 ? '' : `<td class="num">${x.filled ? (x.sum / x.filled).toFixed(1) : '-'}</td>`}${stage === 2 ? (() => { const a = p1Score(r); return `<td class="num">${a ?? '-'}</td><td class="num"><b>${x.filled === x.n ? (totalScore(a, x.s100) ?? '-') : '-'}</b></td>`; })() : ''}<td>${badge(x.e.status === 'draft' && x.filled === x.n ? 'filled' : x.e.status)}</td></tr>`; }).join('')}
     </tbody></table></div>
     <div class="acts"><button class="btn" data-x="c">닫기</button></div>`, true);
   m.addEventListener('click', e => { if (e.target.dataset.x) closeModal(); });
@@ -923,7 +933,7 @@ function updateSum() {
   const tg = $('#evTarget');
   if (tg && ST.my) tg.innerHTML = (() => { const tr = myTiers(E.stage).length > 1 ? tierOf(E.t) : null; return targetHtml(stageAvg(E.stage, E.t.target_id, cur, tr), `내 ${E.stage}차${tr ? ' ' + tr : ''}`); })() + (s100 == null && cur != null ? '<span class="tn" style="font-size:13px;color:var(--muted)">(이 대상자는 입력한 역량까지 반영)</span>' : '');
   setTimeout(placeTopBtn, 0);
-  $('#evSum').innerHTML = `입력 <b>${vals.length}</b> / ${E.items.length} &nbsp;·&nbsp; 점수 <b>${s100 != null ? s100 : '-'}</b>점 <span style="color:var(--muted)">/ 100점 환산</span> &nbsp;<span style="color:var(--muted);font-size:13px">(원점수 ${sum}/${E.items.length * 10})</span>`;
+  $('#evSum').innerHTML = `입력 <b>${vals.length}</b> / ${E.items.length} &nbsp;·&nbsp; 점수 <b>${s100 != null ? s100 : '-'}</b>점 <span style="color:var(--muted)">/ 100점 환산</span> &nbsp;<span style="color:var(--muted);font-size:13px">(원점수 ${sum}/${E.items.length * 10})</span>${(() => { const a = E.stage === 2 && E.p1 ? score100(E.items, E.p1) : null; if (a == null) return ''; const tt = totalScore(a, s100); return ` &nbsp;·&nbsp; 1차 <b>${a}</b>점${tt != null ? ` &nbsp;·&nbsp; ${W_LABEL()} <b style="color:var(--pri)">${tt}</b>점` : ''}`; })()}`;
 }
 // 다음 역량 자동 이동 설정 (기본 꺼짐, 켜면 브라우저에 기억)
 function autoNextOn() { try { return localStorage.getItem('autoNext') === 'on'; } catch (e) { return false; } }

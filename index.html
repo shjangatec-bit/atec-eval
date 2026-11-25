@@ -179,6 +179,7 @@ td select,td input.inp{padding:5px 7px;border:1px solid var(--line);border-radiu
 .sec-tgt{font-size:15px;color:var(--ink2)}
 .tier-h{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline;margin:14px 0 6px;padding:6px 12px;background:var(--pri-l,#eef3ff);border-radius:8px;font-size:15px}
 .tier-h b{color:var(--pri)}
+.promo{display:inline-block;margin-top:4px;padding:2px 8px;border-radius:20px;font-size:12px;font-weight:600;background:var(--warn-l,#fff3df);color:var(--warn,#a96200);white-space:nowrap}
 @media (max-width:640px){.modal .m-hide{display:none}}
 .tier-h .tn{color:var(--ink2)}
 .totop{position:fixed;right:20px;bottom:24px;z-index:40;width:48px;height:48px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--pri);font-size:22px;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(20,40,90,.16);opacity:0;pointer-events:none;transform:translateY(8px);transition:opacity .2s,transform .2s}
@@ -452,7 +453,7 @@ function makeDemoApi() {
       await delay();
       const me = meEmp(), out = [];
       const fn = c => (S.forms.find(f => f.code === c) || {}).name || null;
-      const row = (t, stage, e, s1) => ({ target_id: t.id, stage, emp_no: t.emp_no, name: t.name, dept: t.dept, team: t.team, grade: t.grade, pos: t.pos, form_code: t.form_code, form_name: fn(t.form_code), status: e ? e.status : 'none', stage1_done: s1, updated_at: e ? e.updated_at : null });
+      const row = (t, stage, e, s1) => ({ target_id: t.id, stage, emp_no: t.emp_no, name: t.name, dept: t.dept, team: t.team, grade: t.grade, pos: t.pos, form_code: t.form_code, form_name: fn(t.form_code), status: e ? e.status : 'none', stage1_done: s1, updated_at: e ? e.updated_at : null, promo: t.promo || null });
       S.targets.filter(t => t.cycle === S.settings.cycle && t.included).forEach(t => {
         if (t.e1_emp === me) out.push(row(t, 1, ev(t.id, 1), true));
         if (t.e2_emp === me) { const e1 = ev(t.id, 1); out.push(row(t, 2, ev(t.id, 2), !!e1 && e1.status === 'submitted')); }
@@ -735,7 +736,7 @@ function renderMy() {
           : (k === 'wait' || k === 'noform') ? `<button class="btn sm" disabled>${k === 'wait' ? '1차 제출 후 가능' : '평가 불가'}</button>`
           : `<button class="btn sm ${k === 'filled' ? '' : 'pri'}" data-act="open" data-t="${r.target_id}" data-s="${stage}">${k === 'filled' ? '수정' : k === 'draft' ? '이어서 작성' : '평가하기'}</button>`;
         return tierHead(stage, rows, i, multi) + `<div class="trow">
-          <div class="nm">${esc(r.name)}</div>
+          <div class="nm">${esc(r.name)}${r.promo ? `<div><span class="promo">${esc(r.promo.replace(/^\d{4}\s*/, ''))}</span></div>` : ''}</div>
           <div class="meta"><div>${esc(r.dept || '')}${r.team && r.team !== r.dept ? ' · ' + esc(r.team) : ''} · ${esc(r.grade || '')}${r.pos ? ' / ' + esc(r.pos) : ''}</div>
             <div style="color:var(--muted)">${esc(r.form_name || '평가표 미지정')}</div></div>
           <div class="sc">${myScoreCell(r)}</div><div class="st">${badge(k)}</div>${btn}</div>`;
@@ -923,6 +924,7 @@ function renderEval() {
       <div><div class="l">직급 / 직책</div><div class="v">${esc(t.grade || '')} / ${esc(t.pos || '')}</div></div>
       <div><div class="l">평가표</div><div class="v">${esc(t.form_name || '')}</div></div>
       <div><div class="l">최근 3년 평가등급</div><div class="v">${histHtml(E.hist, t.emp_no)}</div></div>
+      ${t.promo ? `<div><div class="l">승진</div><div class="v"><span class="promo">${esc(t.promo)}</span></div></div>` : ''}
     </div></div>
     ${notes.join('')}
     <details class="guide" ${ro ? '' : 'open'}><summary>점수 기준</summary><table><tbody>

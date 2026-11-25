@@ -1097,7 +1097,7 @@ function renderProgress() {
   const tbl = rows.length ? `<div class="tbl-wrap"><table class="tbl-fit"><thead><tr><th>사번</th><th>성명</th><th>부서 / 팀</th><th>직급</th><th>최근 3년</th><th>평가표</th><th>1차 평가자</th><th>1차</th><th>2차 평가자</th><th>2차</th><th class="c">작업</th></tr></thead><tbody>
     ${rows.map(t => {
       const e1 = I.ev.get(t.id + '-1'), e2 = I.ev.get(t.id + '-2');
-      return `<tr><td>${esc(t.emp_no)}</td><td><b>${esc(t.name)}</b></td><td class="wrap">${esc(t.dept || '')}<small>${esc(t.team || '')}</small></td><td>${esc(t.grade || '')}</td><td>${histHtml(HM, t.emp_no)}</td>
+      return `<tr><td>${esc(t.emp_no)}</td><td><b>${esc(t.name)}</b>${t.promo ? `<div><span class="promo">${esc(t.promo.replace(/^\d{4}\s*/, ''))}</span></div>` : ''}</td><td class="wrap">${esc(t.dept || '')}<small>${esc(t.team || '')}</small></td><td>${esc(t.grade || '')}</td><td>${histHtml(HM, t.emp_no)}</td>
       <td class="wrap">${t.form_code ? esc(t.form_code) + '<small>' + esc((I.forms.get(t.form_code) || {}).name || '') + '</small>' : badge('noform')}</td>
       ${evr(t, 1)}${evr(t, 2)}
       <td class="c"><button class="btn sm" data-act="viewScores" data-id="${t.id}" ${e1 || e2 ? '' : 'disabled'}>점수</button>
@@ -1148,7 +1148,7 @@ HANDLERS.viewScores = a => {
   const v = (e, s) => e && e.scores[s] != null ? e.scores[s] : '-';
   const sum = e => e ? its.reduce((s, i) => s + (e.scores[i.seq] || 0), 0) : '-';
   const stx = e => e ? STATUS[e.status][0] : '없음';
-  const m = modal(`<h3>${esc(t.name)} · ${esc((I.forms.get(t.form_code) || {}).name || '')}</h3>
+  const m = modal(`<h3>${esc(t.name)} · ${esc((I.forms.get(t.form_code) || {}).name || '')}${t.promo ? ` <span class="promo">${esc(t.promo)}</span>` : ''}</h3>
     <p style="margin-bottom:6px">최근 3년 ${histHtml(histMap(ST.adm.history), t.emp_no)}</p>
     <p>1차 ${esc(accName(I, t.e1_emp))} (${stx(e1)}) · 2차 ${esc(accName(I, t.e2_emp) || '1차 종결')}${t.e2_emp ? ` (${stx(e2)})` : ''}</p>
     <div class="tbl-wrap"><table><thead><tr><th>No</th><th>구분</th><th>역량</th><th class="num">1차</th><th class="num">2차</th></tr></thead><tbody>
@@ -1174,7 +1174,7 @@ function renderTargets() {
       const e1 = I.ev.get(t.id + '-1'), e2 = I.ev.get(t.id + '-2');
       const prog = [e1 ? '1차 ' + STATUS[e1.status][0] : '', e2 ? '2차 ' + STATUS[e2.status][0] : ''].filter(Boolean).join(' · ');
       return `<tr data-id="${t.id}" class="${t.included ? '' : 'off'}">
-        <td>${esc(t.emp_no)}</td><td><b>${esc(t.name)}</b></td><td class="wrap">${esc(t.dept || '')}<small>${esc(t.team || '')}</small></td><td class="wrap">${esc(t.grade || '')}<small>${esc(t.pos || '')}</small></td>
+        <td>${esc(t.emp_no)}</td><td><b>${esc(t.name)}</b>${t.promo ? `<div><span class="promo">${esc(t.promo.replace(/^\d{4}\s*/, ''))}</span></div>` : ''}</td><td class="wrap">${esc(t.dept || '')}<small>${esc(t.team || '')}</small></td><td class="wrap">${esc(t.grade || '')}<small>${esc(t.pos || '')}</small></td>
         <td><select data-tf="form_code">${formOpts(t.form_code)}</select></td>
         <td><select data-tf="e1_emp">${accOpts(t.e1_emp, '— 선택 —')}</select></td>
         <td><select data-tf="e2_emp">${accOpts(t.e2_emp, '없음 (1차 종결)')}</select></td>

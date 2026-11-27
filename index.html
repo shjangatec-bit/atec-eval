@@ -179,6 +179,7 @@ td select,td input.inp{padding:5px 7px;border:1px solid var(--line);border-radiu
 .sec-tgt{font-size:15px;color:var(--ink2)}
 .tier-h{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline;margin:14px 0 6px;padding:6px 12px;background:var(--pri-l,#eef3ff);border-radius:8px;font-size:15px}
 .tier-h b{color:var(--pri)}
+.tier-kpi{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}.tier-kpi td{padding:3px 4px;border:0;white-space:nowrap}.tier-kpi td b{font-size:17px}
 .promo{display:inline-block;margin-top:4px;padding:2px 8px;border-radius:20px;font-size:12px;font-weight:600;background:var(--warn-l,#fff3df);color:var(--warn,#a96200);white-space:nowrap}
 @media (max-width:640px){.modal .m-hide{display:none}}
 .tier-h .tn{color:var(--ink2)}
@@ -746,14 +747,17 @@ function renderMy() {
   const kpiRow = stage => {
     const rs = ST.my.filter(r => r.stage === stage); if (!rs.length) return '';
     const total = rs.length, done = rs.filter(r => r.status === 'submitted').length, st = myStats(stage);
-    const tots = stage === 2 ? rs.map(r => { const x = myScoreInfo(r); return x && x.filled === x.n ? totalScore(p1Score(r), x.s100) : null; }).filter(v => v != null) : [];
-    const tAvg = tots.length ? Math.round(tots.reduce((s, v) => s + v, 0) / tots.length * 10) / 10 : null;
+    const totAvg = list => { const v = (stage === 2 ? list.map(r => { const x = myScoreInfo(r); return x && x.filled === x.n ? totalScore(p1Score(r), x.s100) : null; }) : []).filter(v => v != null); return v.length ? Math.round(v.reduce((s, x) => s + x, 0) / v.length * 10) / 10 : null; };
+    const tAvg = totAvg(rs), tiers = myTiers(stage), mt = tiers.length > 1;
+    const mt3 = mt ? `<div class="kpi"><div class="l">내가 준 ${stage}차 점수 평균 (직책 구분별 · 조정 기준 ${ADJ()}점)</div>
+        <table class="tier-kpi"><tbody>${tiers.map(t => { const s = myStats(stage, t), ta = totAvg(rs.filter(r => tierOf(r) === t)), n = rs.filter(r => tierOf(r) === t).length;
+          return `<tr><td>${t}</td><td class="num"><b>${s ? s.avg : '-'}</b>${s ? '점' : ''}</td><td class="num" style="color:var(--muted)">${s ? s.n : 0}/${n}명</td>${stage === 2 ? `<td class="num">${ta != null ? `종합 <b style="color:var(--pri)">${ta}</b>` : ''}</td>` : ''}</tr>`; }).join('')}</tbody></table></div>` : '';
     return `<div class="kpis" style="margin-top:${stage === 2 && ST.my.some(r => r.stage === 1) ? '28px' : '0'}">
       <div class="kpi"><div class="l">${stage}차 평가할 인원</div><div class="v">${total}</div></div>
       <div class="kpi"><div class="l">${stage}차 제출 완료</div><div class="v">${done} <small>/ ${total}</small></div><div class="bar"><i style="width:${total ? done / total * 100 : 0}%"></i></div></div>
-      <div class="kpi"><div class="l">내가 준 ${stage}차 점수 평균 (100점 환산)</div><div class="v">${st ? st.avg : '-'} <small>조정 기준 ${ADJ()}점</small></div>
-        <div style="font-size:14px;color:var(--ink2)">${st ? `입력 완료 ${st.n}건 · 점수 차이(편차) ${st.sd}점` : '모든 역량을 입력하면 계산됩니다'}${tAvg != null ? `<br>1·2차 종합 평균 <b>${tAvg}</b>점` : ''}</div></div>
-    </div>${statsHint(st)}`;
+      ${mt ? mt3 : `<div class="kpi"><div class="l">내가 준 ${stage}차 점수 평균 (100점 환산)</div><div class="v">${st ? st.avg : '-'} <small>조정 기준 ${ADJ()}점</small></div>
+        <div style="font-size:14px;color:var(--ink2)">${st ? `입력 완료 ${st.n}건 · 점수 차이(편차) ${st.sd}점` : '모든 역량을 입력하면 계산됩니다'}${tAvg != null ? `<br>1·2차 종합 평균 <b>${tAvg}</b>점` : ''}</div></div>`}
+    </div>${mt ? '' : statsHint(st)}`;
   };
   const body = ST.my.length ? `${adjNoteHtml()}${kpiRow(1)}${sec(1)}${kpiRow(2)}${sec(2)}`
     : `<div class="card empty">배정된 평가 대상자가 없습니다.</div>`;

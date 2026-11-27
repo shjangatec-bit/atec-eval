@@ -742,14 +742,20 @@ function renderMy() {
           <div class="sc">${myScoreCell(r)}</div><div class="st">${badge(k)}</div>${btn}</div>`;
       }).join('')}</div>${finalBar(stage, rows)}`;
   };
-  const total = ST.my.length, done = ST.my.filter(r => r.status === 'submitted').length, st = myStats();
-  const body = ST.my.length ? `${adjNoteHtml()}
-    <div class="kpis">
-      <div class="kpi"><div class="l">평가할 인원(건)</div><div class="v">${total}</div></div>
-      <div class="kpi"><div class="l">제출 완료</div><div class="v">${done} <small>/ ${total}</small></div><div class="bar"><i style="width:${total ? done / total * 100 : 0}%"></i></div></div>
-      <div class="kpi"><div class="l">내가 준 점수 평균 (100점 환산)</div><div class="v">${st ? st.avg : '-'} <small>조정 기준 ${ADJ()}점</small></div>
-        <div style="font-size:14px;color:var(--ink2)">${st ? `입력 완료 ${st.n}건 · 점수 차이(편차) ${st.sd}점` : '모든 역량을 입력하면 계산됩니다'}</div></div>
-    </div>${statsHint(st)}${sec(1)}${sec(2)}`
+  // 차수별 요약 카드: 각 차수 목록 바로 위에 표시
+  const kpiRow = stage => {
+    const rs = ST.my.filter(r => r.stage === stage); if (!rs.length) return '';
+    const total = rs.length, done = rs.filter(r => r.status === 'submitted').length, st = myStats(stage);
+    const tots = stage === 2 ? rs.map(r => { const x = myScoreInfo(r); return x && x.filled === x.n ? totalScore(p1Score(r), x.s100) : null; }).filter(v => v != null) : [];
+    const tAvg = tots.length ? Math.round(tots.reduce((s, v) => s + v, 0) / tots.length * 10) / 10 : null;
+    return `<div class="kpis" style="margin-top:${stage === 2 && ST.my.some(r => r.stage === 1) ? '28px' : '0'}">
+      <div class="kpi"><div class="l">${stage}차 평가할 인원</div><div class="v">${total}</div></div>
+      <div class="kpi"><div class="l">${stage}차 제출 완료</div><div class="v">${done} <small>/ ${total}</small></div><div class="bar"><i style="width:${total ? done / total * 100 : 0}%"></i></div></div>
+      <div class="kpi"><div class="l">내가 준 ${stage}차 점수 평균 (100점 환산)</div><div class="v">${st ? st.avg : '-'} <small>조정 기준 ${ADJ()}점</small></div>
+        <div style="font-size:14px;color:var(--ink2)">${st ? `입력 완료 ${st.n}건 · 점수 차이(편차) ${st.sd}점` : '모든 역량을 입력하면 계산됩니다'}${tAvg != null ? `<br>1·2차 종합 평균 <b>${tAvg}</b>점` : ''}</div></div>
+    </div>${statsHint(st)}`;
+  };
+  const body = ST.my.length ? `${adjNoteHtml()}${kpiRow(1)}${sec(1)}${kpiRow(2)}${sec(2)}`
     : `<div class="card empty">배정된 평가 대상자가 없습니다.</div>`;
   $('#app').innerHTML = shell(`<h2>내 평가</h2><p class="desc">역량별 0~10점을 입력하고, 모두 마치면 <b>[최종 제출]</b>을 누르세요. (자동 저장)</p>${body}`);
 }
